@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="pt-br" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>O que o mandato pagou — patrimônio declarado dos deputados federais</title>
+<meta name="description" content="Painel interativo com as declarações de bens de 1.025 pessoas já eleitas deputado federal, de 2010 a 2026, medidas contra o subsídio que o cargo pagou.">
+<!-- seo:start (gerado por scripts/gera_seo.py — não editar à mão) -->
+<link rel="canonical" href="https://rodado.xyz/analises/patrimonio/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="rodado">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="https://rodado.xyz/analises/patrimonio/">
+<meta property="og:title" content="O que o mandato pagou — patrimônio declarado dos deputados federais">
+<meta property="og:description" content="Painel interativo com as declarações de bens de 1.025 pessoas já eleitas deputado federal, de 2010 a 2026, medidas contra o subsídio que o cargo pagou.">
+<meta property="og:image" content="https://rodado.xyz/analises/img/og-patrimonio.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="O que o mandato pagou — patrimônio declarado dos deputados federais — rodado">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="O que o mandato pagou — patrimônio declarado dos deputados federais">
+<meta name="twitter:description" content="Painel interativo com as declarações de bens de 1.025 pessoas já eleitas deputado federal, de 2010 a 2026, medidas contra o subsídio que o cargo pagou.">
+<meta name="twitter:image" content="https://rodado.xyz/analises/img/og-patrimonio.png">
+<link rel="icon" href="https://rodado.xyz/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="https://rodado.xyz/assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="https://rodado.xyz/assets/favicon-16.png">
+<link rel="apple-touch-icon" href="https://rodado.xyz/assets/apple-touch-icon.png">
+<link rel="manifest" href="https://rodado.xyz/site.webmanifest">
+<meta name="theme-color" content="#9c3b2e">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"O que o mandato pagou — patrimônio declarado dos deputados federais","description":"Painel interativo com as declarações de bens de 1.025 pessoas já eleitas deputado federal, de 2010 a 2026, medidas contra o subsídio que o cargo pagou.","url":"https://rodado.xyz/analises/patrimonio/","image":"https://rodado.xyz/analises/img/og-patrimonio.png","inLanguage":"pt-BR","author":{"@type":"Organization","name":"rodado"},"isPartOf":{"@type":"WebSite","name":"rodado","url":"https://rodado.xyz/"}}</script>
+<!-- seo:end -->
+<link rel="canonical" href="https://rodado.xyz/analises/patrimonio/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="O que o mandato pagou">
+<meta property="og:description" content="Painel interativo com as declarações de bens de 1.025 pessoas já eleitas deputado federal, de 2010 a 2026, medidas contra o subsídio que o cargo pagou.">
+<meta property="og:url" content="https://rodado.xyz/analises/patrimonio/">
+<meta property="og:image" content="https://rodado.xyz/analises/img/panorama-bens-candidatos.png">
+<meta name="twitter:card" content="summary_large_image">
+<!-- head:start (gerado por scripts/gera_seo.py — não editar à mão) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="https://rodado.xyz/assets/site.css">
+<link rel="stylesheet" href="https://rodado.xyz/assets/mcp-theme.css">
+<script defer src="https://cloud.umami.is/script.js" data-website-id="d2597bf7-73e0-4e7e-b353-1202d9f72b7d"></script>
+<!-- head:end -->
+<style>
+
+/* ─── fichário: papel de livro-razão, filete de 1px, número em mono tabular ── */
+:root{
+  --paper:#e9ede8; --surface:#f4f7f3; --sunk:#dfe5de;
+  --ink:#131816; --ink2:#5b6663; --ink3:#828c88;
+  --rule:#ccd4cd; --rule2:#b3bdb6;
+  --accent:#1d5450; --accent-fg:#f4f7f3;
+  --abaixo:#5d7f88;  /* cabe no subsídio — mesma cor dos gráficos publicados */
+  --acima:#d1453b;   /* não cabe */
+  --neutro:#a9b2ac;
+  --serif:Charter,"Bitstream Charter","Iowan Old Style",Georgia,ui-serif,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,"JetBrains Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#101416; --surface:#171d1f; --sunk:#0b0e10;
+    --ink:#e7ece9; --ink2:#9aa5a1; --ink3:#6d7873;
+    --rule:#2b3436; --rule2:#3d4749;
+    --accent:#6fb3aa; --accent-fg:#0b0e10;
+    --abaixo:#7fa3ad; --acima:#e2695e; --neutro:#5c6763;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101416; --surface:#171d1f; --sunk:#0b0e10;
+  --ink:#e7ece9; --ink2:#9aa5a1; --ink3:#6d7873;
+  --rule:#2b3436; --rule2:#3d4749;
+  --accent:#6fb3aa; --accent-fg:#0b0e10;
+  --abaixo:#7fa3ad; --acima:#e2695e; --neutro:#5c6763;
+}
+:root[data-theme="light"]{
+  --paper:#e9ede8; --surface:#f4f7f3; --sunk:#dfe5de;
+  --ink:#131816; --ink2:#5b6663; --ink3:#828c88;
+  --rule:#ccd4cd; --rule2:#b3bdb6;
+  --accent:#1d5450; --accent-fg:#f4f7f3;
+  --abaixo:#5d7f88; --acima:#d1453b; --neutro:#a9b2ac;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+     font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;text-wrap:balance}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ─── cabeçalho ─────────────────────────────────────────────────────────── */
+header{border-bottom:1px solid var(--rule2);background:var(--surface);
+       padding:10px 18px 9px;display:flex;flex-wrap:nowrap;gap:16px;
+       align-items:baseline;justify-content:space-between}
+header h1{font-size:19px;letter-spacing:-.01em;display:inline}
+header > div:first-child{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;min-width:0}
+header p{margin:0;color:var(--ink2);font-size:12.5px;max-width:none;white-space:nowrap;
+         overflow:hidden;text-overflow:ellipsis}
+.selo{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
+      text-transform:uppercase;color:var(--ink3)}
+.tema{background:none;border:1px solid var(--rule2);color:var(--ink2);
+      font-family:var(--mono);font-size:11px;padding:5px 9px;cursor:pointer}
+.tema:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ─── estrutura ─────────────────────────────────────────────────────────── */
+/* dvh e não vh: no celular a barra de endereço entra e sai da conta do vh, e
+   a página ganhava uma faixa morta do tamanho dela no fim da rolagem */
+.tela{display:grid;grid-template-columns:298px minmax(0,1fr);
+      min-height:calc(100vh - 48px);
+      min-height:calc(100dvh - 48px)}
+.rail{border-right:1px solid var(--rule2);background:var(--surface);
+      padding:16px 18px 40px;display:flex;flex-direction:column;gap:16px;
+      max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);
+      overflow-y:auto;position:sticky;top:0}
+/* O bloco comum do gera_seo traz o site.css para esta página, e com ele a
+   coluna de leitura do site — `main` com 1180px e margem automática, filhos
+   com 700px. Ali é uma reportagem; aqui o palco é a tela inteira ao lado do
+   rail, e o gráfico ficava espremido em 700px. Desfaz as duas regras, com
+   `main.palco` para vencer no peso do seletor. */
+main.palco{max-width:none;margin:0}
+main.palco > *{max-width:none}
+.palco{padding:16px 18px 40px;min-width:0;display:flex;
+       flex-direction:column}
+#palcoConteudo{flex:1 1 auto;display:flex;flex-direction:column;width:100%}
+#palcoConteudo > .quadro:first-child{flex:1 1 auto;display:flex;
+       flex-direction:column}
+#palcoConteudo > .quadro:first-child canvas{flex:1 1 auto}
+
+/* ─── filtros ───────────────────────────────────────────────────────────── */
+.grupo{display:flex;flex-direction:column;gap:7px}
+.rotulo{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+        text-transform:uppercase;color:var(--ink3)}
+.busca{width:100%;padding:7px 9px;border:1px solid var(--rule2);
+       background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-family:var(--mono);font-size:11.5px;padding:4px 8px;cursor:pointer;
+      border:1px solid var(--rule2);background:var(--paper);color:var(--ink2);
+      user-select:none}
+.chip:hover{border-color:var(--ink3)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);
+                           border-color:var(--ink)}
+.chip.esq[aria-pressed="true"]{background:#b2544f;border-color:#b2544f;color:#fff}
+.chip.cen[aria-pressed="true"]{background:#8a8f7e;border-color:#8a8f7e;color:#fff}
+.chip.dir[aria-pressed="true"]{background:var(--abaixo);border-color:var(--abaixo);color:#fff}
+select{width:100%;padding:6px 8px;border:1px solid var(--rule2);
+       background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:13.5px}
+/* ─── chave de três posições ─────────────────────────────────────────────
+   A caixa de marcar só sabia dizer "sim" e "tanto faz": para perguntar quem
+   *não* é sócio de empresa não havia controle nenhum. Aqui cada recorte tem
+   as três posições explícitas, e a do meio — tanto faz — é o repouso. É um
+   radiogroup de verdade, então seta e Tab andam nele como o leitor de tela
+   espera. */
+.tri{display:flex;flex-direction:column;gap:5px}
+.tri-rot{font-size:13px;color:var(--ink2)}
+.tri-ops{display:grid;grid-template-columns:repeat(3,1fr);
+         border:1px solid var(--rule2);background:var(--paper)}
+.tri-ops button{font-family:var(--mono);font-size:11.5px;padding:6px 4px;
+                background:none;border:none;color:var(--ink3);cursor:pointer;
+                border-left:1px solid var(--rule2);line-height:1.2;
+                min-height:30px;transition:background .1s,color .1s}
+.tri-ops button:first-child{border-left:none}
+.tri-ops button:hover{color:var(--ink)}
+.tri-ops button[aria-checked="true"]{background:var(--ink);color:var(--paper)}
+.tri-ops button[data-v="sim"][aria-checked="true"]{background:var(--accent);
+                                                   color:var(--accent-fg)}
+.tri-ops button[data-v="nao"][aria-checked="true"]{background:var(--acima);
+                                                   color:#fff}
+.tri-ops button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.contagem{font-family:var(--mono);font-size:12px;color:var(--ink2);
+          border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+          padding:9px 0}
+.contagem b{color:var(--ink);font-size:16px}
+.limpar{background:none;border:none;color:var(--accent);font-size:12.5px;
+        cursor:pointer;padding:0;text-align:left;text-decoration:underline}
+
+/* ─── lista de pessoas ──────────────────────────────────────────────────── */
+/* Cada linha é uma ficha: filete de espectro à esquerda, nome, meta, o
+   múltiplo em número e a forma da trajetória em miniatura. A miniatura é
+   normalizada por pessoa — ela mostra o desenho do que aconteceu, não a
+   escala, que já está no número ao lado. */
+.lista{display:flex;flex-direction:column;border-top:1px solid var(--rule)}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 9px;
+      padding:8px 8px 8px 10px;border-bottom:1px solid var(--rule);cursor:pointer;
+      background:none;border-top:none;border-right:none;
+      border-left:3px solid var(--rule2);text-align:left;
+      font-family:inherit;color:inherit;width:100%;align-items:center}
+.item[data-e="0"]{border-left-color:#b2544f}
+.item[data-e="1"]{border-left-color:#8a8f7e}
+.item[data-e="2"]{border-left-color:var(--abaixo)}
+.item:hover{background:var(--sunk)}
+.item:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.item[aria-current="true"]{background:var(--sunk)}
+.item[aria-current="true"] .nm{font-weight:600}
+.item .nm{font-size:13.5px;line-height:1.25;overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap}
+.item .sub{grid-column:1;font-family:var(--mono);font-size:10.5px;
+           color:var(--ink3);overflow:hidden;text-overflow:ellipsis;
+           white-space:nowrap}
+.item .mult{font-family:var(--mono);font-size:13.5px;
+            font-variant-numeric:tabular-nums;text-align:right;line-height:1.25}
+.item .spark{grid-column:2;justify-self:end;display:block}
+.item .pin{color:var(--accent)}
+.mais{font-family:var(--mono);font-size:11.5px;color:var(--ink2);padding:10px 6px;
+      background:none;border:none;border-bottom:1px solid var(--rule);
+      cursor:pointer;text-align:left;width:100%;text-decoration:underline}
+.mais:hover{color:var(--accent)}
+.nada{font-family:var(--serif);font-size:14px;color:var(--ink2);padding:18px 4px;
+      line-height:1.55}
+.ordena{display:flex;align-items:center;gap:6px}
+.ordena select{font-size:12px;padding:4px 6px}
+
+/* ─── abas ──────────────────────────────────────────────────────────────── */
+.abas{display:flex;gap:0;border-bottom:1px solid var(--rule2);margin-bottom:18px}
+.aba{font-family:var(--mono);font-size:12px;letter-spacing:.05em;
+     text-transform:uppercase;padding:9px 15px;background:none;border:none;
+     border-bottom:2px solid transparent;color:var(--ink3);cursor:pointer;
+     margin-bottom:-1px}
+.aba[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.aba:hover{color:var(--ink2)}
+
+/* ─── gráficos ──────────────────────────────────────────────────────────── */
+.quadro{border:1px solid var(--rule);background:var(--surface);padding:14px}
+.quadro + .quadro{margin-top:16px}
+.legenda{display:flex;flex-wrap:wrap;gap:14px;font-family:var(--mono);
+         font-size:11px;color:var(--ink2);margin-top:10px}
+.legenda span{display:flex;align-items:center;gap:5px}
+.swatch{width:11px;height:11px;flex:none}
+/* pan-y: o dedo rola a página por cima do gráfico, que ocupa quase a tela
+   inteira no celular. Quem quiser mover o gráfico com um dedo liga o modo
+   explorar, e aí o JS troca para touch-action:none. */
+canvas{display:block;width:100%;cursor:crosshair;touch-action:pan-y}
+svg{display:block;width:100%;overflow:visible}
+.dica{position:fixed;pointer-events:none;background:var(--ink);color:var(--paper);
+      font-family:var(--mono);font-size:11.5px;padding:6px 8px;line-height:1.45;
+      z-index:40;max-width:260px;opacity:0;transition:opacity .1s}
+/* no toque não existe hover: a dica que segue o cursor não tem como aparecer
+   antes do toque, então quem aponta com o dedo recebe este cartão — que fica
+   parado, diz em quem o toque acertou e só então oferece abrir a ficha */
+@media (pointer:coarse){ .dica{display:none} }
+.cartao[hidden]{display:none}
+.cartao{position:fixed;z-index:45;background:var(--surface);color:var(--ink);
+        border:1px solid var(--rule2);box-shadow:0 8px 26px rgba(0,0,0,.24);
+        padding:11px 13px 12px;max-width:min(320px,calc(100vw - 20px));
+        font-size:13px;line-height:1.4}
+.cartao .nome{font-family:var(--serif);font-size:16px;font-weight:600;
+              display:block;text-wrap:balance}
+.cartao .linha{font-family:var(--mono);font-size:11.5px;color:var(--ink2);
+               margin-top:3px}
+.cartao .acoes{display:flex;gap:8px;margin-top:11px}
+.cartao .acoes .bt{flex:1 1 auto;min-height:42px;justify-content:center}
+
+/* ─── carregando / erro ─────────────────────────────────────────────────── */
+.carregando{font-family:var(--serif);font-size:16px;color:var(--ink2);
+            padding:44px 4px;display:flex;align-items:center;gap:11px}
+.carregando::before{content:"";width:15px;height:15px;flex:none;border-radius:50%;
+                    border:2px solid var(--rule2);border-top-color:var(--accent);
+                    animation:gira .8s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.carregando::before{animation:none}}
+
+/* ─── dossiê ────────────────────────────────────────────────────────────── */
+.ficha{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;
+       border-bottom:1px solid var(--rule2);padding-bottom:12px;margin-bottom:16px}
+.ficha h2{font-size:25px;letter-spacing:-.015em;width:100%}
+.ficha .bt{margin-left:auto}
+.dado{font-family:var(--mono);font-size:12px;color:var(--ink2)}
+.dado b{color:var(--ink);font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:right;padding:6px 9px;border-bottom:1px solid var(--rule);
+      font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+th{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+   color:var(--ink3);font-weight:400;border-bottom-color:var(--rule2)}
+td:first-child,th:first-child{text-align:left}
+/* Sombra nas bordas enquanto houver conteúdo escondido de lado. Sem ela a
+   tabela larga parecia cortada em vez de rolável — no toque não há barra de
+   rolagem à mostra para denunciar que ainda tem coluna adiante. */
+.rolagem{overflow-x:auto;overscroll-behavior-x:contain;
+  background-image:
+    linear-gradient(to right,var(--surface),rgba(0,0,0,0)),
+    linear-gradient(to left,var(--surface),rgba(0,0,0,0)),
+    radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.16),rgba(0,0,0,0)),
+    radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.16),rgba(0,0,0,0));
+  background-position:0 0,100% 0,0 0,100% 0;
+  background-repeat:no-repeat;
+  background-size:26px 100%,26px 100%,12px 100%,12px 100%;
+  background-attachment:local,local,scroll,scroll}
+.tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;padding:1px 4px;
+     border:1px solid currentColor;text-transform:uppercase}
+/* razão social é nome próprio, não número: sai do mono tabular e pode quebrar */
+td.empresa{font-family:var(--sans);white-space:normal;color:var(--ink)}
+tfoot td{color:var(--ink2);border-bottom:none;border-top:1px solid var(--rule2)}
+.rodape{font-size:11.5px;color:var(--ink3);margin:9px 0 0;line-height:1.45;
+        max-width:70ch}
+.t-eleito{color:var(--accent)}
+.t-parcial{color:var(--ink3)}
+
+/* ─── nota de leitura ───────────────────────────────────────────────────── */
+.notas{margin-top:26px;border-top:1px solid var(--rule2);padding-top:16px}
+.notas summary{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;
+               text-transform:uppercase;color:var(--ink2);cursor:pointer}
+.notas .corpo{font-family:var(--serif);font-size:14px;line-height:1.5;
+              max-width:none;color:var(--ink2);margin-top:9px;
+              display:flex;flex-direction:column;gap:5px}
+.notas .corpo p{margin:0}
+.notas .corpo b{color:var(--ink)}
+.vazio{font-family:var(--serif);font-size:17px;color:var(--ink2);padding:50px 0;
+       max-width:50ch}
+
+/* ─── controles do panorama ─────────────────────────────────────────────── */
+.ferramentas{display:flex;gap:6px;align-items:center;margin-bottom:10px;
+             flex-wrap:wrap}
+.ferramentas .dizer{font-family:var(--mono);font-size:11px;color:var(--ink3);
+                    margin-left:auto}
+.bt{font-family:var(--mono);font-size:12px;padding:5px 10px;cursor:pointer;
+    border:1px solid var(--rule2);background:var(--paper);color:var(--ink2);
+    line-height:1;min-height:32px}
+.bt:hover{border-color:var(--accent);color:var(--accent)}
+
+.voltar-painel{display:inline-block;font-family:var(--mono);font-size:12px;
+  color:var(--accent);padding:10px 22px 0;text-decoration:none}
+.voltar-painel:hover{text-decoration:underline}
+
+/* ─── gaveta de filtros (só aparece em tela estreita) ───────────────────── */
+.gaveta-bt{display:none}
+/* a aba Lista e o botão de volta só existem na coluna única, onde a lista
+   não está mais ao lado e sim atrás de uma aba */
+.aba-lista,.volta-lista{display:none}
+
+@media (max-width:880px){
+  /* minmax(0,1fr) e não 1fr: senão o conteúdo do rail que não encolhe (nomes
+     longos, <select> de partido) estica a coluna e leva o gráfico junto para
+     fora da tela */
+  .tela{grid-template-columns:minmax(0,1fr)}
+  /* em coluna única o panorama vem primeiro: o gráfico é o que a pessoa veio
+     ver, e os filtros ficam logo abaixo dele em vez de empurrá-lo para fora
+     da primeira tela */
+  .palco{order:-1;padding:12px 14px 22px}
+  /* o rail vira gaveta: fechado por padrão, para o resultado ficar à vista */
+  .rail{position:static;max-height:none;border-right:none;
+        border-top:1px solid var(--rule2);padding:12px 14px 24px;gap:13px}
+  .rail[data-aberto="false"] .so-gaveta{display:none}
+
+  /* Três abas em coluna única: Panorama, Lista, Dossiê. Empilhada abaixo do
+     gráfico, a lista de pessoas só começava a mais de uma tela de rolagem —
+     buscar alguém pelo nome, que é o gesto mais provável no celular, exigia
+     atravessar gráfico, legenda e notas. Aqui ela é destino próprio, a um
+     toque, e a barra de abas gruda no topo para a troca estar sempre à mão. */
+  body[data-aba="lista"] #palcoConteudo,
+  body[data-aba="lista"] .notas{display:none}
+  body:not([data-aba="lista"]) .rail{display:none}
+  .aba-lista{display:inline-block}
+  .volta-lista{display:inline-flex;margin-bottom:12px}
+  .abas{position:sticky;top:0;z-index:30;background:var(--paper);
+        margin:0 -14px 14px;padding:0 14px;
+        overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .aba{padding:12px 13px;font-size:11.5px;white-space:nowrap;flex:none;
+       min-height:46px}
+  .aba .num{font-size:11px;color:var(--ink3);margin-left:5px}
+  .aba[aria-selected="true"] .num{color:var(--ink2)}
+
+  .gaveta-bt{display:flex;align-items:center;justify-content:space-between;
+             width:100%;font-family:var(--mono);font-size:12.5px;padding:9px 12px;
+             border:1px solid var(--rule2);background:var(--paper);
+             color:var(--ink);cursor:pointer;min-height:46px}
+  .gaveta-bt b{color:var(--accent);font-weight:600}
+
+  /* o cabeçalho quebra em vez de cortar a frase no meio com reticências */
+  header{padding:12px 14px 11px;flex-wrap:wrap;gap:6px 12px;align-items:center}
+  header > div:first-child{flex:1 1 220px}
+  header h1{font-size:21px}
+  header p{font-size:13px;white-space:normal;overflow:visible;text-overflow:clip}
+  .selo{font-size:11px}
+  .quadro{padding:10px}
+  .ficha h2{font-size:22px}
+  .dado{font-size:12.5px}
+  .rodape{font-size:12px}
+  .vazio{font-size:16px;padding:26px 0}
+
+  /* alvos de toque de 44px para cima — antes iam de 17px (voltar) a 32px */
+  .voltar-painel{display:flex;align-items:center;min-height:44px;
+                 padding:6px 14px 0;font-size:12.5px}
+  .tema{min-height:42px;padding:10px 13px;font-size:12px}
+  .bt{min-height:42px;padding:10px 13px;display:inline-flex;align-items:center;
+      justify-content:center}
+  .chip{padding:9px 13px;font-size:12.5px;display:inline-flex;align-items:center;
+        min-height:40px}
+  .tri-ops button{min-height:46px;font-size:12px}
+  .tri-rot{font-size:13.5px}
+  .limpar{min-height:44px;display:inline-flex;align-items:center;font-size:13.5px}
+  .mais{min-height:48px;font-size:12.5px;padding:12px 6px}
+  .item{padding:11px 8px 11px 10px;min-height:56px}
+  /* no celular há largura de sobra: o nome inteiro cabe em duas linhas, e dois
+     xarás deixam de terminar na mesma reticência */
+  .item .nm{white-space:normal;font-size:14.5px}
+  .item .sub{font-size:11.5px}
+  .item .mult{font-size:14.5px}
+  .busca{font-size:16px;padding:11px}   /* 16px evita o zoom automático do iOS */
+  select{font-size:16px;padding:11px 8px}
+  .ordena select{font-size:16px}
+  .lista{max-height:none}
+  .contagem{padding:11px 0}
+
+  /* recorte da tela em paisagem no aparelho com entalhe */
+  header,.palco,.rail,.voltar-painel{
+    padding-left:max(14px,env(safe-area-inset-left));
+    padding-right:max(14px,env(safe-area-inset-right))}
+  .rail{padding-bottom:max(24px,env(safe-area-inset-bottom))}
+}
+@media (max-width:520px){
+  .legenda{gap:9px;font-size:11px}
+  th,td{padding:5px 6px;font-size:12px}
+}
+/* Sete colunas de mono não cabem num telefone, e rolar de lado para ler uma
+   linha é pior do que não ler. Abaixo de 560px cada declaração vira um cartão
+   com rótulo à esquerda e valor à direita — mesma tabela, mesma marcação. */
+@media (max-width:560px){
+  .cartoes{background-image:none;overflow-x:visible}
+  .cartoes table,.cartoes tbody,.cartoes tr,.cartoes td{display:block;width:100%}
+  .cartoes thead{display:none}
+  .cartoes tr{border:1px solid var(--rule);padding:9px 11px;margin-bottom:10px}
+  .cartoes td{display:flex;align-items:baseline;justify-content:space-between;
+              gap:14px;padding:4px 0;border-bottom:none;text-align:right;
+              white-space:normal;font-size:13px}
+  .cartoes td::before{content:attr(data-rot);flex:none;color:var(--ink3);
+                      font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+                      font-family:var(--mono);text-align:left}
+  .cartoes td:first-child{border-bottom:1px solid var(--rule);padding-bottom:7px;
+                          margin-bottom:5px;font-size:14px;color:var(--ink)}
+  .cartoes td:first-child::before{content:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="voltar-painel" href="https://rodado.xyz/analises/bens-dos-candidatos/">&larr; voltar à análise</a>
+<header>
+  <div>
+    <p class="selo">rodado · registros da justiça eleitoral</p>
+    <h1>O que o mandato pagou</h1>
+    <p>Patrimônio declarado por quem foi eleito deputado federal, contra o subsídio do cargo.</p>
+  </div>
+  <button class="tema" id="btnTema" type="button">tema</button>
+</header>
+
+<div class="tela">
+  <aside class="rail" id="rail" data-aberto="false">
+    <div class="grupo">
+      <label class="rotulo" for="q">Buscar pessoa</label>
+      <input class="busca" id="q" type="search" placeholder="nome ou sobrenome"
+             autocomplete="off" enterkeyhint="search">
+    </div>
+
+    <button class="gaveta-bt" id="gaveta" type="button" aria-expanded="false"
+            aria-controls="rail">
+      <span>Filtros</span><b id="gavetaSelo">nenhum</b>
+    </button>
+
+    <div class="grupo so-gaveta">
+      <span class="rotulo">Espectro</span>
+      <div class="chips" id="fEspectro"></div>
+    </div>
+
+    <div class="grupo so-gaveta">
+      <label class="rotulo" for="fPartido">Partido no último registro</label>
+      <select id="fPartido"></select>
+    </div>
+
+    <div class="grupo so-gaveta">
+      <label class="rotulo" for="fUf">Unidade da federação</label>
+      <select id="fUf"></select>
+    </div>
+
+    <div class="grupo so-gaveta">
+      <span class="rotulo">Recorte</span>
+      <div id="recortes"></div>
+    </div>
+
+    <div class="contagem" id="contagem"></div>
+    <button class="limpar so-gaveta" id="limpar" type="button">limpar filtros</button>
+
+    <div class="grupo">
+      <label class="rotulo" for="fOrdem">Resultados, ordenados por</label>
+      <select id="fOrdem"></select>
+      <div class="lista" id="lista"></div>
+    </div>
+  </aside>
+
+  <main class="palco">
+    <div class="abas" role="tablist">
+      <button class="aba" role="tab" data-aba="panorama" aria-selected="true">Panorama</button>
+      <button class="aba aba-lista" role="tab" data-aba="lista"
+              aria-selected="false">Lista <b class="num" id="abaListaN"></b></button>
+      <button class="aba" role="tab" data-aba="dossie" aria-selected="false">Dossiê</button>
+    </div>
+    <div id="palcoConteudo">
+      <p class="carregando">Carregando as declarações de 1.025 pessoas…</p>
+    </div>
+
+    <details class="notas">
+      <summary>Como ler estes números</summary>
+      <div class="corpo" id="notas"></div>
+    </details>
+  </main>
+</div>
+
+<div class="dica" id="dica"></div>
+<div class="cartao" id="cartao" role="dialog" aria-label="ponto do gráfico" hidden></div>
+<noscript>
+  <p class="vazio" style="padding:22px 18px">Este painel é interativo e precisa de
+  JavaScript para carregar as declarações. A análise em texto, com os gráficos
+  principais, está em <a href="https://rodado.xyz/analises/bens-dos-candidatos/">bens dos candidatos</a>.</p>
+</noscript>
+<script src="app.js"></script>
+</body>
+</html>
