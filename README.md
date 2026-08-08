@@ -35,9 +35,9 @@ vereador, porque toda candidatura carrega declaração de bens.
   declaração nas sete categorias de bem, as empresas em que consta no quadro
   societário e a tabela eleição a eleição. Cada pessoa tem endereço próprio e
   compartilhável (`#d=nome-da-pessoa`).
-- **Recortes** — sócio de empresa, régua comparável e crescimento acima do
-  subsídio, cada um com três posições (sim / tanto faz / não). O estado inteiro
-  do painel vive na URL, então qualquer vista dá link.
+- **Recortes** — sócio de empresa e crescimento acima do subsídio, cada um com
+  três posições (sim / ambos / não). O estado inteiro do painel vive na URL,
+  então qualquer vista dá link.
 
 ## Por que a série começa em 2010
 

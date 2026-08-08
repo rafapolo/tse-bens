@@ -95,14 +95,12 @@ function corMult(v){
 }
 
 /* ── estado ─────────────────────────────────────────────────────────────── */
-/* Os três recortes têm três posições: "" (tanto faz), "sim" e "nao". O teste
-   de cada um mora aqui junto do rótulo, para não ficar espalhado entre o
-   filtro, o controle e o endereço. */
+/* Os dois recortes têm três posições: "" (ambos), "sim" e "nao". O teste de
+   cada um mora aqui junto do rótulo, para não ficar espalhado entre o filtro,
+   o controle e o endereço. */
 const RECORTES = [
   {id:"empresa", url:"emp", rotulo:"sócio de empresa",
    sim: p=> !!p[EMP]},
-  {id:"regua", url:"reg", rotulo:"régua comparável",
-   sim: p=> p.multiplo !== null},
   // sem régua não é "cresceu abaixo": é não dá para dizer. Fica fora dos dois.
   {id:"acima", url:"ac", rotulo:"cresceu acima do subsídio",
    sim: p=> p.multiplo !== null && p.multiplo > 1,
@@ -118,7 +116,7 @@ const estreitaTela = ()=> innerWidth < 880;
 const PAGINA = estreitaTela() ? 40 : 120;
 
 const est = {q:"", espectro:new Set(), partido:"", uf:"",
-             empresa:"", regua:"", acima:"",
+             empresa:"", acima:"",
              aba:"panorama", sel:null, fixados:[],
              ordem:"multiplo", limite:PAGINA};
 
@@ -243,7 +241,7 @@ function montaControles(){
   el("fPartido").onchange = e=>{ est.partido = e.target.value; vista=null; est.limite = PAGINA; desenha(); };
   el("fUf").onchange = e=>{ est.uf = e.target.value; vista=null; est.limite = PAGINA; desenha(); };
 
-  const POSICOES = [["","tanto faz"],["sim","sim"],["nao","não"]];
+  const POSICOES = [["","ambos"],["sim","sim"],["nao","não"]];
   el("recortes").innerHTML = RECORTES.map(r=>
     `<div class="tri" role="radiogroup" aria-label="${r.rotulo}" data-r="${r.id}">
        <span class="tri-rot">${r.rotulo}</span>
@@ -270,7 +268,7 @@ function montaControles(){
   };
   el("limpar").onclick = ()=>{
     Object.assign(est,{q:"",espectro:new Set(),partido:"",uf:"",
-      empresa:"",regua:"",acima:""});
+      empresa:"",acima:""});
     vista = null; est.limite = PAGINA; est.ordem = 'multiplo'; sincronizaControles(); desenha();
   };
   el("gaveta").onclick = ()=>{
@@ -411,9 +409,14 @@ const ORDENS = {
 };
 
 function desenhaLista(res){
+  const total = PESSOAS.length;
+  const pct = total ? Math.round(res.length/total*100) : 0;
   el("contagem").innerHTML =
-    `<b>${nf.format(res.length)}</b> de ${nf.format(PESSOAS.length)} pessoas`
-    + `<br>${nf.format(res.reduce((s,p)=>s+p[PTS].length,0))} declarações`;
+    `<b>${nf.format(res.length)}</b> de ${nf.format(total)} pessoas`
+    + `<span class="pct">${pct}%</span>`
+    + `<span class="bar" aria-hidden="true"><i style="width:${pct}%"></i></span>`
+    + `<span class="quebra"></span>`
+    + `<span>${nf.format(res.reduce((s,p)=>s+p[PTS].length,0))} declarações</span>`;
   // no celular a lista está atrás de uma aba: o número tem de aparecer nela,
   // senão o filtro parece não ter surtido efeito nenhum
   const selo = el("abaListaN");
@@ -1132,12 +1135,14 @@ el("notas").innerHTML = `
 const TITULO = document.title;
 
 function desenha(empurra){
+  fechaCartao();
   sincronizaControles();
   const res = filtra();
   desenhaLista(res);
+  // na aba lista o palco está escondido pelo CSS: pintar 1.025 pontos ali
+  // seria trabalho jogado fora, e o que já estava montado espera a volta
   if(est.aba === "panorama") panorama(res);
-  else if(est.aba === "dossie") dossie();
-  else dossie();
+  else if(est.aba !== "lista") dossie();
   // o nome no título faz o link colado, a aba e o histórico dizerem de quem
   // é a ficha antes de a página abrir
   document.title = est.sel !== null && PESSOAS[est.sel]
@@ -1148,13 +1153,33 @@ function desenha(empurra){
 /* Abrir uma pessoa é o único gesto que vira entrada de histórico: é o que se
    compartilha, e é o que o "voltar" deve desfazer. */
 function abrePessoa(i){
+  if(est.aba === "lista") rolagemLista = scrollY;
   est.sel = i; est.aba = "dossie"; desenha(true);
   // no celular o palco fica acima da lista: sem isto o dossiê abriria fora da
   // tela e o clique pareceria não ter feito nada
-  if(innerWidth < 880) document.querySelector(".palco").scrollIntoView({
-    block:"start",
+  if(estreitaTela()) rolaAoPalco();
+}
+
+/* Onde a lista estava quando se saiu dela. Sem guardar, quem abre a décima
+   ficha e volta cai no topo e tem de rolar tudo de novo para chegar na
+   décima primeira. */
+let rolagemLista = 0;
+
+function rolaAoPalco(){
+  const alvo = document.querySelector(".palco");
+  if(alvo) alvo.scrollIntoView({block:"start",
     behavior: matchMedia("(prefers-reduced-motion:reduce)").matches
       ? "auto" : "smooth"});
+}
+
+function trocaAba(nova){
+  if(nova === est.aba){ if(estreitaTela()) rolaAoPalco(); return; }
+  if(est.aba === "lista") rolagemLista = scrollY;
+  est.aba = nova;
+  desenha();
+  if(!estreitaTela()) return;
+  if(nova === "lista" && rolagemLista) scrollTo({top:rolagemLista, behavior:"auto"});
+  else rolaAoPalco();
 }
 
 // voltar/avançar do navegador e edição do endereço à mão caem aqui; o teste
@@ -1169,6 +1194,33 @@ montaControles();
 desenha();
 addEventListener("hashchange", aplicaUrl);
 addEventListener("popstate", aplicaUrl);
+
+/* Antes só o canvas se reinscrevia no resize; os gráficos do dossiê ficavam
+   com a largura medida no primeiro desenho e, ao girar o aparelho, escalavam
+   com sobra de um lado. Agora o redesenho é do painel inteiro — acionado por
+   qualquer mudança de largura ou de altura, porque a altura do canvas depende
+   da janela. O debounce absorve o chuveiro de eventos que o iOS dispara quando
+   a barra de endereço encolhe durante a rolagem. */
+let dimJanela = [innerWidth, innerHeight], tGiro = 0;
+addEventListener("resize", ()=>{
+  if(innerWidth === dimJanela[0] && innerHeight === dimJanela[1]) return;
+  dimJanela = [innerWidth, innerHeight];
+  clearTimeout(tGiro);
+  tGiro = setTimeout(()=>{
+    // a aba Lista não existe na tela larga: lá a lista está sempre ao lado
+    if(!estreitaTela() && est.aba === "lista")
+      est.aba = est.sel !== null ? "dossie" : "panorama";
+    desenha();
+  }, 150);
+}, {passive:true});
+
+// o cartão aponta um ponto do gráfico: rolar a página ou tocar em outro lugar
+// o desfaz, senão ele fica flutuando apontando o nada
+addEventListener("scroll", ()=>{ if(cartaoAlvo) fechaCartao(); }, {passive:true});
+addEventListener("pointerdown", ev=>{
+  if(!cartaoAlvo || cartao.contains(ev.target) || ev.target === el("cv")) return;
+  fechaCartao();
+}, true);
 })
 /* São 373 KB, e em rede móvel instável eles falham de vez em quando. Sem isto
    a página ficava muda: o esqueleto de carregamento girava para sempre e não
