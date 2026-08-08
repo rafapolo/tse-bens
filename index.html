@@ -30,22 +30,30 @@
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"O que o mandato pagou — patrimônio declarado dos deputados federais","description":"Painel interativo com as declarações de bens de 1.025 pessoas já eleitas deputado federal, de 2010 a 2026, medidas contra o subsídio que o cargo pagou.","url":"https://rodado.xyz/analises/patrimonio/","image":"https://rodado.xyz/analises/img/og-patrimonio.png","inLanguage":"pt-BR","author":{"@type":"Organization","name":"rodado"},"isPartOf":{"@type":"WebSite","name":"rodado","url":"https://rodado.xyz/"}}</script>
 <!-- seo:end -->
-<link rel="canonical" href="https://rodado.xyz/analises/patrimonio/">
-<meta property="og:type" content="website">
-<meta property="og:title" content="O que o mandato pagou">
-<meta property="og:description" content="Painel interativo com as declarações de bens de 1.025 pessoas já eleitas deputado federal, de 2010 a 2026, medidas contra o subsídio que o cargo pagou.">
-<meta property="og:url" content="https://rodado.xyz/analises/patrimonio/">
-<meta property="og:image" content="https://rodado.xyz/analises/img/panorama-bens-candidatos.png">
-<meta name="twitter:card" content="summary_large_image">
+<meta name="color-scheme" content="dark light">
+
+<!-- ATENÇÃO, gera_seo.py: o bloco comum abaixo perdeu, de propósito, as quatro
+     folhas de estilo de terceiros que ele costuma trazer (Google Fonts, Font
+     Awesome, site.css, mcp-theme.css). Nenhuma pinta nada aqui: não há classe
+     `fa-*` no HTML nem no JS, o `.voltar-painel` é local, e o :root do <style>
+     abaixo troca as famílias por pilhas de sistema, então as duas famílias
+     baixadas nunca chegavam a ser usadas — o navegador nem pedia os arquivos
+     de fonte, só o CSS. Eram quatro conexões novas, ~115 KB, todas bloqueando
+     o primeiro paint. As duas regras que a página herdava sem querer viraram
+     CSS local: veja `header h1` e o comentário em `.ficha h2`.
+     Se este bloco for regenerado, não reponha as folhas. -->
 <!-- head:start (gerado por scripts/gera_seo.py — não editar à mão) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="https://rodado.xyz/assets/site.css">
-<link rel="stylesheet" href="https://rodado.xyz/assets/mcp-theme.css">
 <script defer src="https://cloud.umami.is/script.js" data-website-id="d2597bf7-73e0-4e7e-b353-1202d9f72b7d"></script>
 <!-- head:end -->
+
+<!-- O dados.json é o caminho crítico e não depende de nada do app.js, então o
+     pedido sai aqui, durante o parse do head, em paralelo com o download do
+     próprio app.js, que só o consome. É um fetch de uma linha, e não um
+     `link rel=preload as=fetch`, porque o preload precisa casar modo e
+     credenciais com o pedido real; quando não casa, o navegador baixa os
+     373 KB duas vezes, calado. Aqui é a mesma promessa, sem heurística. -->
+<script>window.__dados = fetch("dados.json");</script>
+<script defer src="app.js"></script>
 <style>
 
 /* ─── fichário: papel de livro-razão, filete de 1px, número em mono tabular ── */
@@ -97,7 +105,9 @@ a{color:var(--accent)}
 header{border-bottom:1px solid var(--rule2);background:var(--surface);
        padding:10px 18px 9px;display:flex;flex-wrap:nowrap;gap:16px;
        align-items:baseline;justify-content:space-between}
-header h1{font-size:19px;letter-spacing:-.01em;display:inline}
+/* line-height explícito: era a única regra do mcp-theme.css que esta página
+   ainda herdava (h1{line-height:1.08}). Sem ela o cabeçalho crescia 4px. */
+header h1{font-size:19px;line-height:1.08;letter-spacing:-.01em;display:inline}
 header > div:first-child{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;min-width:0}
 header p{margin:0;color:var(--ink2);font-size:12.5px;max-width:none;white-space:nowrap;
          overflow:hidden;text-overflow:ellipsis}
@@ -117,11 +127,12 @@ header p{margin:0;color:var(--ink2);font-size:12.5px;max-width:none;white-space:
       padding:16px 18px 40px;display:flex;flex-direction:column;gap:16px;
       max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);
       overflow-y:auto;position:sticky;top:0}
-/* O bloco comum do gera_seo traz o site.css para esta página, e com ele a
-   coluna de leitura do site — `main` com 1180px e margem automática, filhos
-   com 700px. Ali é uma reportagem; aqui o palco é a tela inteira ao lado do
-   rail, e o gráfico ficava espremido em 700px. Desfaz as duas regras, com
-   `main.palco` para vencer no peso do seletor. */
+/* Quando o site.css do rodado entra nesta página, entra com ele a coluna de
+   leitura do site — `main` com 1180px e margem automática, filhos com 700px.
+   Ali é uma reportagem; aqui o palco é a tela inteira ao lado do rail, e o
+   gráfico ficava espremido em 700px. O <head> não carrega mais o site.css,
+   mas estas duas regras ficam: custam nada e seguram o layout caso o bloco
+   comum do gera_seo volte a injetá-lo na cópia servida pelo rodado. */
 main.palco{max-width:none;margin:0}
 main.palco > *{max-width:none}
 .palco{padding:16px 18px 40px;min-width:0;display:flex;
@@ -273,6 +284,9 @@ svg{display:block;width:100%;overflow:visible}
 /* ─── dossiê ────────────────────────────────────────────────────────────── */
 .ficha{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;
        border-bottom:1px solid var(--rule2);padding-bottom:12px;margin-bottom:16px}
+/* Enquanto o site.css do rodado entrava aqui, este h2 herdava dele o estilo de
+   título de reportagem — padding-top:.4rem e um filete de 1px acima do nome.
+   Era vazamento, não desenho, e não foi reposto. Se fizer falta, é uma linha. */
 .ficha h2{font-size:25px;letter-spacing:-.015em;width:100%}
 .ficha .bt{margin-left:auto}
 .dado{font-family:var(--mono);font-size:12px;color:var(--ink2)}
@@ -522,6 +536,5 @@ tfoot td{color:var(--ink2);border-bottom:none;border-top:1px solid var(--rule2)}
   JavaScript para carregar as declarações. A análise em texto, com os gráficos
   principais, está em <a href="https://rodado.xyz/analises/bens-dos-candidatos/">bens dos candidatos</a>.</p>
 </noscript>
-<script src="app.js"></script>
 </body>
 </html>
