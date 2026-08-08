@@ -1,0 +1,14 @@
+{
+  "name": "tse-bens",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Painel do patrimônio declarado por quem foi eleito deputado federal",
+  "scripts": {
+    "build": "rolldown -c",
+    "serve": "npm run build && python3 -m http.server 8000 --directory dist"
+  },
+  "devDependencies": {
+    "rolldown": "^1.2.3"
+  }
+}

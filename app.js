@@ -1,6 +1,8 @@
 (function(){
 "use strict";
-fetch("dados.json").then(r=>{
+/* O index.html dispara o fetch no <head> e deixa a promessa em window.__dados;
+   o fallback mantém o app.js funcionando sozinho, sem aquela linha. */
+(window.__dados || fetch("dados.json")).then(r=>{
   if(!r.ok) throw new Error("HTTP "+r.status);
   return r.json();
 }).then(function(D){
@@ -779,6 +781,44 @@ function panorama(res){
 }
 
 /* ── dossiê ─────────────────────────────────────────────────────────────── */
+/* ── o detalhe do dossiê vem à parte ────────────────────────────────────── */
+/* A composição de cada declaração (`comp`) e a lista de empresas aparecem só
+   aqui, uma pessoa por vez, mas juntas eram 58% do dados.json: todo mundo
+   baixava as duas para ver o panorama, que não usa nenhuma delas. O build as
+   separa num segundo arquivo e diz o nome dele em `meta.dossies`. Elas entram
+   na primeira vez que fazem falta — e, antes disso, num prefetch ocioso, para
+   que o clique não espere por rede. Servido sem build, `meta.dossies` não
+   existe, o detalhe já veio no primeiro fetch e nada aqui roda. */
+let detalhePronto = !M.dossies, detalhePedido = null;
+
+function carregaDetalhe(){
+  if(detalhePronto) return null;
+  if(!detalhePedido){
+    detalhePedido = fetch(M.dossies)
+      .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+      .then(function(det){
+        PESSOAS.forEach(p=>{
+          const d = det[p.i];
+          if(!d) return;
+          p[LEMP] = d.e;
+          p[PTS].forEach((pt,j)=> pt[COMP] = d.c[j] || 0);
+        });
+        detalhePronto = true;
+      })
+      .catch(err=>{ detalhePedido = null; throw err; });   // deixa tentar de novo
+  }
+  return detalhePedido;
+}
+
+/* Puxa o detalhe quando a linha estiver ociosa, para que abrir o primeiro
+   dossiê não custe uma ida à rede. Se o clique chegar antes, `carregaDetalhe`
+   devolve esta mesma promessa em vez de pedir de novo. */
+function prefetchDetalhe(){
+  if(detalhePronto) return;
+  const ocioso = window.requestIdleCallback || (f=>setTimeout(f, 1200));
+  ocioso(()=>{ const q = carregaDetalhe(); if(q) q.catch(()=>{}); });
+}
+
 function dossie(){
   const alvo = el("palcoConteudo");
   repintaPanorama = null;          // o canvas saiu do palco
@@ -791,6 +831,27 @@ function dossie(){
       estreitaTela() ? "na aba <b>Lista</b>" : "na lista ao lado"}, ou toque
       num ponto do panorama, para ver a trajetória declarada dela.</p>`;
     ligaVolta();
+    return;
+  }
+  /* A ficha inteira depende do detalhe — a composição e as empresas fazem parte
+     dela —, então espera em vez de pintar meia ficha e completar depois. Na
+     prática o prefetch já resolveu e este ramo não acontece; ele existe para o
+     link direto (`#d=nome`) aberto com a rede lenta. */
+  const espera = carregaDetalhe();
+  if(espera){
+    const quem = est.sel;
+    const aindaAqui = ()=> est.aba === "dossie" && est.sel === quem;
+    alvo.innerHTML = volta + `<p class="carregando">Carregando a ficha…</p>`;
+    ligaVolta();
+    espera.then(()=>{ if(aindaAqui()) dossie(); }, ()=>{
+      if(!aindaAqui()) return;
+      alvo.innerHTML = volta + `<p class="vazio">Não deu para carregar esta
+        ficha. Em rede móvel instável isso costuma ser passageiro.</p>
+        <button class="bt" type="button" id="tentaFicha">tentar de novo</button>`;
+      ligaVolta();
+      const b = el("tentaFicha");
+      if(b) b.onclick = ()=> dossie();
+    });
     return;
   }
   const pts = p[PTS];
@@ -1192,6 +1253,7 @@ function aplicaUrl(){
 leHash();
 montaControles();
 desenha();
+prefetchDetalhe();          // depois do primeiro desenho, na folga da linha
 addEventListener("hashchange", aplicaUrl);
 addEventListener("popstate", aplicaUrl);
 

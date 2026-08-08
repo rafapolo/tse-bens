@@ -95,9 +95,9 @@ painel roda normalmente com o `dados.json` que já está no repositório.
 
 ## Rodando
 
-Não tem build, não tem dependência, não tem `node_modules`. É HTML, CSS e um
-arquivo de JavaScript sem framework nenhum. Qualquer servidor estático serve —
-só não abra por `file://`, porque o `fetch` do `dados.json` precisa de HTTP.
+Não tem framework, não tem dependência de runtime. É HTML, CSS e um arquivo de
+JavaScript. Qualquer servidor estático serve a fonte direto, sem build — só não
+abra por `file://`, porque o `fetch` do `dados.json` precisa de HTTP.
 
 ```bash
 git clone https://github.com/rafapolo/tse-bens.git
@@ -110,7 +110,7 @@ python3 -m http.server 8000
 |---|---|
 | `index.html` | a página, com todo o CSS embutido |
 | `app.js` | o painel inteiro — filtros, gráficos em SVG, dossiê, estado na URL |
-| `dados.json` | 373 KB, gerado; 136 KB na rede depois do gzip |
+| `dados.json` | 373 KB, gerado; o build o parte em dois para servir |
 | `screenshot.png` | a imagem deste README |
 
 O `dados.json` é compacto de propósito: partido, cargo e UF são índices para
@@ -119,15 +119,93 @@ formato está descrito em `meta.campos_pessoa` e `meta.campos_ponto`, dentro do
 próprio arquivo — as ressalvas acima também vivem lá, em `meta.ressalvas`, e o
 painel as lê de lá em vez de repeti-las no código.
 
-A folha de estilo e os ícones vêm de `rodado.xyz` por URL absoluta, então o
-mesmo arquivo serve o painel dentro do site e fora dele.
+A página não busca CSS de lugar nenhum: todo o estilo está no `<style>` do
+`index.html`, e as famílias são pilhas de sistema. O `index.html` serve o painel
+dentro do rodado e fora dele sem mudar de caminho — tudo que ele pede é
+relativo.
+
+## Build
+
+O build minifica o `app.js`, parte o `dados.json` em dois e junta em `dist/` o
+que vai ao ar. Não transforma o CSS nem o HTML.
+
+```bash
+npm install
+npm run build   # dist/{index.html,app.js,dados.json,dossies.json,.nojekyll}
+npm run serve   # build + servidor estático em dist/, na porta 8000
+```
+
+[Rolldown](https://rolldown.rs) faz o bundle: 57 KB → 29 KB de `app.js`, 19 KB →
+11 KB depois do gzip. `dist/` e `node_modules/` não entram no git.
+
+### Por que o dados.json sai partido em dois
+
+A composição de cada declaração (`comp`, sete categorias) e a lista de empresas
+(`empresas_lista`) somam 58% do arquivo, e nenhuma das duas é lida fora do
+Dossiê — que mostra uma pessoa por vez. O Panorama, que é o que todo mundo vê
+primeiro, não toca em nenhuma delas. Mesmo assim todo visitante baixava as duas
+antes de o primeiro gráfico aparecer.
+
+O build tira as duas de `dados.json`, escreve em `dossies.json` e anota o nome
+desse arquivo em `meta.dossies`:
+
+| arquivo | bruto | gzip | quando |
+|---|---|---|---|
+| `dados.json` | 167 KB | 48 KB | primeiro paint |
+| `dossies.json` | 244 KB | 78 KB | no primeiro Dossiê |
+| *antes, arquivo único* | *382 KB* | *130 KB* | *primeiro paint* |
+
+O primeiro paint cai de 130 KB para 48 KB de gzip, −63%. A soma dos dois dá
+126 KB, um pouco menos que os 130 KB de antes, então nem quem abre um Dossiê
+paga a mais.
+
+O `app.js` puxa o `dossies.json` num `requestIdleCallback` depois do primeiro
+desenho, então na prática o clique numa pessoa não espera rede nenhuma (74 ms
+no teste local, sem pedido novo). O link direto para uma ficha (`#d=nome`) com a
+rede lenta é o único caso que espera, e aí aparece um "Carregando a ficha…"; se
+o pedido falha, aparece o mesmo "tentar de novo" do carregamento principal.
+
+Nada disso é obrigatório: se `meta.dossies` não existir — que é o caso ao servir
+a fonte direto, sem build — o detalhe já veio no primeiro `fetch` e o caminho de
+carregamento tardio não roda.
 
 ## Publicação
 
-O site [rodado.xyz](https://rodado.xyz) monta este repositório em
-`/analises/patrimonio/` a cada deploy, e um cron diário garante que mudança
-feita aqui chegue lá mesmo sem push no rodado. Ou seja: o endereço público
-continua sendo `rodado.xyz/analises/patrimonio/`, e o código mora aqui.
+Dois endereços, do mesmo push no `main`, por dois workflows independentes:
+
+| workflow | onde |
+|---|---|
+| `publica-roda.yml` | manda `repository_dispatch` para o rodado, que remonta `rodado.xyz/analises/patrimonio/` |
+| `publica-pages.yml` | roda o build e publica o `dist/` no GitHub Pages |
+
+Para o Pages funcionar, é preciso apontar **Settings › Pages › Source** para
+*GitHub Actions* uma vez. O `<link rel="canonical">` continua apontando para
+`rodado.xyz/analises/patrimonio/`, que segue sendo o endereço de referência — a
+cópia no Pages é espelho, e não disputa a mesma página na busca.
+
+### O que saiu do `<head>` e por quê
+
+A página carregava quatro folhas de estilo de terceiros — Google Fonts, Font
+Awesome, `site.css` e `mcp-theme.css` do rodado. Nenhuma pintava nada aqui: não
+há classe `fa-*` no HTML nem no JS, e o `:root` local redefine `--sans`,
+`--serif` e `--mono` para pilhas de sistema, então as duas famílias baixadas
+nunca chegavam a ser usadas (o navegador nem pedia os arquivos de fonte, só o
+CSS). Eram quatro conexões novas, ~115 KB, todas bloqueando o primeiro paint.
+
+Duas regras dessas folhas *eram* herdadas, sem querer, e viraram CSS local:
+
+- `h1{line-height:1.08}`, do `mcp-theme.css` — sem ela o cabeçalho crescia 4px;
+  virou `line-height` explícito no `header h1`.
+- `h2{padding-top:.4rem;border-top:1px}`, do `site.css` — estilo de reportagem
+  que vazava para o nome da pessoa no Dossiê, com um filete de 1px acima. Não
+  foi reposto: era vazamento, não desenho. Se fizer falta, é uma linha em
+  `.ficha h2`.
+
+O `dados.json` é o caminho crítico e não depende de nada do `app.js`, então o
+pedido sai de um `<script>` de uma linha no `<head>`, em paralelo com o download
+do próprio `app.js`, que só o consome. É `fetch` e não `<link rel=preload
+as=fetch>` porque o preload precisa casar modo e credenciais com o pedido real;
+quando não casa, o navegador baixa os 373 KB duas vezes, calado.
 
 ## Licença
 
