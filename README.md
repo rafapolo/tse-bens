@@ -131,7 +131,7 @@ que vai ao ar. Não transforma o CSS nem o HTML.
 
 ```bash
 npm install
-npm run build   # dist/{index.html,app.js,dados.json,dossies.json,.nojekyll}
+npm run build   # dist/{index.html,app.js,dados.json,dossies.json,sw.js,.nojekyll}
 npm run serve   # build + servidor estático em dist/, na porta 8000
 ```
 
@@ -168,6 +168,35 @@ o pedido falha, aparece o mesmo "tentar de novo" do carregamento principal.
 Nada disso é obrigatório: se `meta.dossies` não existir — que é o caso ao servir
 a fonte direto, sem build — o detalhe já veio no primeiro `fetch` e o caminho de
 carregamento tardio não roda.
+
+### O service worker, e por que os dois arquivos levam uma versão
+
+O GitHub Pages fixa `Cache-Control: max-age=600` em tudo e não dá como mudar:
+de dez em dez minutos quem volta rebaixa os 126 KB inteiros. O `sw.js` — gerado
+pelo build, porque o nome do cache carrega o hash do conteúdo — resolve isso
+servindo tudo do cache enquanto o dist for o mesmo. Na segunda visita não há um
+único pedido de rede, e o painel funciona offline, inclusive abrindo dossiês.
+
+Isso cria um problema que vale explicar, porque é a razão de o `dados.json` e o
+`dossies.json` levarem um campo de versão. O detalhe é indexado pela **posição**
+da pessoa no array, que é estável entre os dois arquivos de um mesmo build mas
+não entre extrações: entra e sai gente, e as posições andam. Com o service
+worker trocando arquivos por baixo de uma aba aberta, um deploy que caia entre o
+`dados.json` que já está na memória e o pedido do `dossies.json` casaria os dois
+pela posição errada — e penduraria **as empresas de uma pessoa na ficha de
+outra**. Num painel de transparência esse é o erro que não pode acontecer.
+
+Então o build escreve o mesmo hash em `meta.versao` e no `v` do detalhe, e o
+`app.js` confere antes de casar os dois. Quando não casam, recarrega uma vez
+para pegar o par inteiro — e uma marca em `sessionStorage` garante que uma
+inconsistência de verdade pare no aviso de erro em vez de virar laço de
+recarga. Conferido nos dois casos: deploy no meio da sessão recupera com uma
+recarga só, e par permanentemente quebrado estabiliza e cai no "tentar de novo",
+sem nunca mostrar dado trocado.
+
+O service worker só entra no `dist/`, e o registro é injetado no `index.html` só
+ali: o rodado serve por conta própria e pode mandar os cabeçalhos que quiser, e
+a fonte deste repositório segue sem service worker nenhum.
 
 ## Publicação
 

@@ -790,6 +790,8 @@ function panorama(res){
    que o clique não espere por rede. Servido sem build, `meta.dossies` não
    existe, o detalhe já veio no primeiro fetch e nada aqui roda. */
 let detalhePronto = !M.dossies, detalhePedido = null;
+// marca de uma recarga já tentada, para não entrar em laço se ela não resolver
+const RECARGA = "tse-bens-recarga";
 
 function carregaDetalhe(){
   if(detalhePronto) return null;
@@ -797,8 +799,24 @@ function carregaDetalhe(){
     detalhePedido = fetch(M.dossies)
       .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
       .then(function(det){
+        /* O detalhe é indexado pela posição da pessoa no array, e a posição só
+           vale dentro de uma mesma extração: entra e sai gente, e ela anda. Se
+           um deploy novo entrar entre o dados.json que está na memória e este
+           pedido — o service worker troca os arquivos por baixo —, casar os
+           dois pela posição penduraria as empresas de uma pessoa na ficha de
+           outra. Então não se adivinha: confere a versão e recarrega para
+           pegar o par inteiro de uma vez. */
+        if(det.v !== M.versao){
+          if(!sessionStorage.getItem(RECARGA)){
+            sessionStorage.setItem(RECARGA, "1");
+            location.reload();
+            return new Promise(()=>{});      // a página já vai embora
+          }
+          throw new Error("versão do detalhe não casa com a dos dados");
+        }
+        sessionStorage.removeItem(RECARGA);
         PESSOAS.forEach(p=>{
-          const d = det[p.i];
+          const d = det.p[p.i];
           if(!d) return;
           p[LEMP] = d.e;
           p[PTS].forEach((pt,j)=> pt[COMP] = d.c[j] || 0);
