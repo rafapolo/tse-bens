@@ -508,8 +508,16 @@ function passoBonito(amp, alvo){
   return (n<1.5 ? 1 : n<3 ? 2 : n<7 ? 5 : 10) * p;
 }
 
+/* No toque, mover o gráfico com um dedo e rolar a página são o mesmo gesto, e
+   o gráfico ocupa quase a tela inteira: quem tentava descer a página ficava
+   preso arrastando a nuvem de pontos. Por padrão o dedo rola a página
+   (touch-action:pan-y) e só toca em pontos; quem quiser mover a vista liga o
+   modo explorar, e aí o canvas passa a ficar com o gesto. */
+let explorar = false;
+
 function panorama(res){
   const alvo = el("palcoConteudo");
+  const toque = matchMedia("(pointer:coarse)").matches;
   alvo.innerHTML = `
     <div class="quadro">
       <div class="ferramentas">
@@ -517,6 +525,8 @@ function panorama(res){
         <button class="bt" id="zMenos" type="button" aria-label="afastar">−</button>
         <button class="bt" id="zReset" type="button">moldura padrão</button>
         <button class="bt" id="zAjusta" type="button">ajustar aos dados</button>
+        ${toque?`<button class="bt" id="zDedo" type="button"
+           aria-pressed="${explorar}">${explorar?"voltar a rolar":"mover com o dedo"}</button>`:""}
         <span class="dizer" id="zDizer"></span>
       </div>
       <canvas id="cv"></canvas>
@@ -526,16 +536,20 @@ function panorama(res){
         <span><i class="swatch" style="background:var(--abaixo)"></i>direita</span>
         <span><i class="swatch" style="background:var(--neutro)"></i>sem classificação</span>
         <span>tamanho do ponto = número de empresas</span>
-        <span>role para ampliar · arraste para mover</span>
+        <span>${toque
+          ? (explorar ? "um dedo move · dois dedos ampliam · toque num ponto para ver quem é"
+                      : "toque num ponto para ver quem é · role a página por cima do gráfico")
+          : "role para ampliar · arraste para mover"}</span>
       </div>
     </div>`;
   const cv = el("cv"), ctx = cv.getContext("2d");
+  cv.style.touchAction = explorar ? "none" : "pan-y";
   const css = getComputedStyle(document.documentElement);
   const cor = n => css.getPropertyValue(n).trim();
 
   const com = res.filter(p=> p.multiplo !== null);
   const sem = res.length - com.length;
-  const estreito = innerWidth < 880;
+  const estreito = estreitaTela();
   // o canvas acompanha a janela em vez de ter altura fixa, para o palco
   // esticado não deixar faixa morta embaixo do gráfico
   const ALT = Math.max(estreito ? 320 : 420,
@@ -596,11 +610,12 @@ function panorama(res){
       p._vis = true;
       const r = (estreito?1.9:2.2) + Math.min(p[EMP],9)*.42;
       p._r = r;
+      const anelado = est.sel === p.i || (cartaoAlvo && cartaoAlvo.i === p.i);
       ctx.beginPath(); ctx.arc(cx,cy,r,0,6.284);
       ctx.fillStyle = p[ESP] >= 0 ? CORES[p[ESP]] : cor("--neutro");
-      ctx.globalAlpha = est.sel === p.i ? 1 : .62;
+      ctx.globalAlpha = anelado ? 1 : .62;
       ctx.fill();
-      if(est.sel === p.i){
+      if(anelado){
         ctx.globalAlpha=1; ctx.strokeStyle=cor("--ink"); ctx.lineWidth=2;
         ctx.beginPath(); ctx.arc(cx,cy,r+3.5,0,6.284); ctx.stroke();
       }
@@ -634,12 +649,10 @@ function panorama(res){
       + (partes.length ? " · "+partes.join(" · ") : "");
   }
   pinta();
-  if(panorama._resize) removeEventListener("resize", panorama._resize);
-  panorama._resize = ()=> pinta();
-  addEventListener("resize", panorama._resize, {passive:true});
+  repintaPanorama = pinta;
 
   /* zoom: mantém fixo o ponto sob o cursor */
-  function amplia(fator, ancX, ancY){
+  function amplia(fator, ancX, ancY, adiar){
     if(!geo) return;
     const ax = geo.ix(ancX), ay = geo.iy(ancY);
     const lx = Math.log10(Math.max(ax,1));
@@ -647,25 +660,52 @@ function panorama(res){
     if(nx < .05 || nx > 12) return;
     const fx = (lx-vista.x0)/(vista.x1-vista.x0), fy = (ay-vista.y0)/(vista.y1-vista.y0);
     vista = {x0:lx-fx*nx, x1:lx+(1-fx)*nx, y0:ay-fy*ny, y1:ay+(1-fy)*ny};
-    pinta();
+    if(!adiar) pinta();
+  }
+  /* deslocamento em pixels de tela, convertido para coordenadas de dado */
+  function move(dx, dy, adiar){
+    if(!geo) return;
+    const ex = (vista.x1-vista.x0)/(geo.x1-geo.x0), ey = (vista.y1-vista.y0)/(geo.y1-geo.y0);
+    vista = {x0:vista.x0-dx*ex, x1:vista.x1-dx*ex,
+             y0:vista.y0+dy*ey, y1:vista.y1+dy*ey};
+    if(!adiar) pinta();
   }
   cv.addEventListener("wheel", ev=>{
     ev.preventDefault();
     const r = cv.getBoundingClientRect();
+    fechaCartao();
     amplia(Math.exp(ev.deltaY*0.0016), ev.clientX-r.left, ev.clientY-r.top);
   }, {passive:false});
   const meio = ()=> geo ? [(geo.x0+geo.x1)/2, (geo.y0+geo.y1)/2] : [0,0];
-  el("zMais").onclick = ()=> amplia(0.7, ...meio());
-  el("zMenos").onclick = ()=> amplia(1/0.7, ...meio());
-  el("zReset").onclick = ()=>{ vista = vistaInicial(); pinta(); };
-  el("zAjusta").onclick = ()=>{ vista = vistaAjustada(com); pinta(); };
+  el("zMais").onclick = ()=>{ fechaCartao(); amplia(0.7, ...meio()); };
+  el("zMenos").onclick = ()=>{ fechaCartao(); amplia(1/0.7, ...meio()); };
+  el("zReset").onclick = ()=>{ fechaCartao(); vista = vistaInicial(); pinta(); };
+  el("zAjusta").onclick = ()=>{ fechaCartao(); vista = vistaAjustada(com); pinta(); };
+  const btDedo = el("zDedo");
+  if(btDedo) btDedo.onclick = ()=>{
+    explorar = !explorar;
+    cv.style.touchAction = explorar ? "none" : "pan-y";
+    btDedo.textContent = explorar ? "voltar a rolar" : "mover com o dedo";
+    btDedo.setAttribute("aria-pressed", String(explorar));
+    const leg = btDedo.closest(".quadro").querySelector(".legenda span:last-child");
+    if(leg) leg.textContent = explorar
+      ? "um dedo move · dois dedos ampliam · toque num ponto para ver quem é"
+      : "toque num ponto para ver quem é · role a página por cima do gráfico";
+  };
 
-  /* arraste para mover, e pinça de dois dedos no toque */
+  /* Um dedo: rola a página (ou move a vista, no modo explorar). Dois dedos:
+     move e amplia junto, com a pinça ancorada no ponto médio. Mouse: arrasta
+     como sempre. */
   const pts = new Map();
   let base = null;
   cv.addEventListener("pointerdown", ev=>{
-    cv.setPointerCapture(ev.pointerId);
-    pts.set(ev.pointerId, {x:ev.clientX, y:ev.clientY, moveu:0});
+    // capturar o toque tira do navegador a rolagem que ele ia fazer; só vale
+    // quando o gesto é mesmo nosso
+    if(ev.pointerType !== "touch" || explorar){
+      try{ cv.setPointerCapture(ev.pointerId); }catch(e){}
+    }
+    pts.set(ev.pointerId, {x:ev.clientX, y:ev.clientY,
+                           x0:ev.clientX, y0:ev.clientY, moveu:0});
     base = null;
   });
   cv.addEventListener("pointermove", ev=>{
@@ -676,37 +716,52 @@ function panorama(res){
     if(pts.size === 2){
       const [p1,p2] = [...pts.values()];
       const d = Math.hypot(p1.x-p2.x, p1.y-p2.y);
+      const cx = (p1.x+p2.x)/2, cy = (p1.y+p2.y)/2;
       if(base){
         const r = cv.getBoundingClientRect();
-        amplia(base/d, (p1.x+p2.x)/2-r.left, (p1.y+p2.y)/2-r.top);
+        fechaCartao();
+        move(cx-base.cx, cy-base.cy, true);
+        amplia(base.d/d, cx-r.left, cy-r.top);
       }
-      base = d;
+      base = {d, cx, cy};
       return;
     }
-    if(!geo) return;
-    const ex = (vista.x1-vista.x0)/(geo.x1-geo.x0), ey = (vista.y1-vista.y0)/(geo.y1-geo.y0);
-    vista = {x0:vista.x0-dx*ex, x1:vista.x1-dx*ex,
-             y0:vista.y0+dy*ey, y1:vista.y1+dy*ey};
-    pinta();
+    // um dedo fora do modo explorar é rolagem da página, não arraste do gráfico
+    if(ev.pointerType === "touch" && !explorar) return;
+    fechaCartao();
+    move(dx, dy);
   });
   function solta(ev){
     const a = pts.get(ev.pointerId);
     pts.delete(ev.pointerId); base = null;
-    // arraste curto conta como clique: abre o dossiê do ponto mais próximo
-    if(a && a.moveu < 6 && cv._alvo) abrePessoa(cv._alvo.i);
+    if(!a || a.moveu >= 8) return;
+    // toque parado conta como clique. No dedo ele identifica o ponto e oferece
+    // a ficha; no mouse, que já teve a dica no hover, abre direto.
+    const r = cv.getBoundingClientRect();
+    const achou = acha(ev.clientX-r.left, ev.clientY-r.top, ev.pointerType);
+    if(ev.pointerType === "touch"){
+      if(achou){ mostraCartao(achou, ev.clientX, ev.clientY); pinta(); }
+      else fechaCartao();
+    } else if(achou) abrePessoa(achou.i);
   }
   cv.addEventListener("pointerup", solta);
   cv.addEventListener("pointercancel", ev=>{ pts.delete(ev.pointerId); base=null; });
 
-  function aponta(ev){
-    const r = cv.getBoundingClientRect();
-    const mx = ev.clientX-r.left, my = ev.clientY-r.top;
-    let achou = null, melhor = 144;
+  /* Ponto mais próximo dentro da tolerância. No dedo ela é bem maior: a ponta
+     do dedo cobre uns 40px, e os pontos têm 2px de raio. */
+  function acha(mx, my, tipo){
+    const tol = tipo === "touch" ? 22*22 : 12*12;
+    let achou = null, melhor = tol;
     for(const p of com){
       if(!p._vis) continue;
       const d = (p._x-mx)**2 + (p._y-my)**2;
       if(d < melhor){ melhor = d; achou = p; }
     }
+    return achou;
+  }
+  function aponta(ev){
+    const r = cv.getBoundingClientRect();
+    const achou = acha(ev.clientX-r.left, ev.clientY-r.top, ev.pointerType);
     cv._alvo = achou;
     if(achou && ev.pointerType !== "touch"){
       cv.style.cursor = "pointer";
@@ -723,14 +778,20 @@ function panorama(res){
 /* ── dossiê ─────────────────────────────────────────────────────────────── */
 function dossie(){
   const alvo = el("palcoConteudo");
+  repintaPanorama = null;          // o canvas saiu do palco
   const p = est.sel !== null ? PESSOAS[est.sel] : null;
+  // o botão de volta só existe em coluna única, onde a lista está atrás da aba
+  const volta = `<button class="bt volta-lista" type="button" id="voltaLista"
+    >← lista</button>`;
   if(!p){
-    alvo.innerHTML = `<p class="vazio">Escolha uma pessoa na lista ao lado, ou
-      clique num ponto do panorama, para ver a trajetória declarada dela.</p>`;
+    alvo.innerHTML = volta + `<p class="vazio">Escolha uma pessoa ${
+      estreitaTela() ? "na aba <b>Lista</b>" : "na lista ao lado"}, ou toque
+      num ponto do panorama, para ver a trajetória declarada dela.</p>`;
+    ligaVolta();
     return;
   }
   const pts = p[PTS];
-  alvo.innerHTML = `
+  alvo.innerHTML = volta + `
     <div class="ficha">
       <h2>${p[NOME]}</h2>
       <span class="dado">${p[UF]>=0?M.ufs[p[UF]]:"—"} · <b>${p.partidoAtual||"—"}</b>${
@@ -767,25 +828,28 @@ function dossie(){
       seis dígitos do CPF — é indício, não fato. O capital social é o declarado
       no contrato social, não faturamento nem participação desta pessoa.</p>
     </div>` : ""}
-    <div class="quadro rolagem">
+    <div class="quadro rolagem cartoes">
       <table><thead><tr>
         <th>eleição</th><th>cargo</th><th>partido</th><th>declarado</th>
         <th>variação</th><th>subsídio no período</th><th>múltiplo</th>
       </tr></thead><tbody>${pts.map((x,i)=>{
         const dv = i ? x[TOTAL]-pts[i-1][TOTAL] : null;
         const m = i && x[REGUA] ? dv/x[REGUA] : null;
+        // data-rot: no celular a linha vira cartão e cada célula precisa
+        // carregar o próprio rótulo, porque o cabeçalho da tabela some
         return `<tr>
-          <td>${x[ANO]} ${x[FLAGS]&F_ELEITO?'<span class="tag t-eleito">eleito</span>':""}${
+          <td data-rot="eleição">${x[ANO]} ${x[FLAGS]&F_ELEITO?'<span class="tag t-eleito">eleito</span>':""}${
             x[FLAGS]&F_ANO_PARCIAL?' <span class="tag t-parcial">parcial</span>':""}</td>
-          <td>${x[CARGO]>=0?M.cargos[x[CARGO]]:"—"}</td>
-          <td>${x[PART]>=0?M.partidos[x[PART]]:"—"}</td>
-          <td>${brl(x[TOTAL])}</td>
-          <td>${dv===null?"—":brl(dv)}</td>
-          <td>${x[REGUA]?brl(x[REGUA]):"—"}${
+          <td data-rot="cargo">${x[CARGO]>=0?M.cargos[x[CARGO]]:"—"}</td>
+          <td data-rot="partido">${x[PART]>=0?M.partidos[x[PART]]:"—"}</td>
+          <td data-rot="declarado">${brl(x[TOTAL])}</td>
+          <td data-rot="variação">${dv===null?"—":brl(dv)}</td>
+          <td data-rot="subsídio no período">${x[REGUA]?brl(x[REGUA]):"—"}${
             x[FLAGS]&F_REGUA_PARCIAL?' <span class="tag t-parcial">parcial</span>':""}</td>
-          <td style="color:${corMult(m)}">${m===null?"—":mult(m)}</td>
+          <td data-rot="múltiplo" style="color:${corMult(m)}">${m===null?"—":mult(m)}</td>
         </tr>`;}).join("")}</tbody></table>
     </div>`;
+  ligaVolta();
   el("copiaLink").onclick = ev=>{
     const b = ev.currentTarget, volta = ()=> setTimeout(()=>{
       b.textContent = "copiar link desta ficha"; }, 2200);
@@ -799,6 +863,10 @@ function dossie(){
   trajetoria(el("trajetoria"), pts);
   composicao(el("composicao"), pts);
 }
+function ligaVolta(){
+  const b = el("voltaLista");
+  if(b) b.onclick = ()=> trocaAba("lista");
+}
 
 const SVG = "http://www.w3.org/2000/svg";
 function svgEl(n, at){
@@ -806,17 +874,32 @@ function svgEl(n, at){
   for(const k in at) e.setAttribute(k, at[k]);
   return e;
 }
-function eixoAnos(g, pts, px, y1){
-  pts.forEach(x=>{
-    const t = svgEl("text",{x:px(x[ANO]), y:y1+18, "text-anchor":"middle",
+/* Rótulos do eixo do tempo. Numa série de sete ou oito eleições eles se
+   encavalam na largura de um telefone, então ali entram um sim, um não — com
+   o primeiro e o último sempre presentes, que são os que ancoram a leitura. */
+function eixoAnos(g, anos, px, y1, larg){
+  const passo = anos.length > 1 && larg/(anos.length-1) < 34 ? 2 : 1;
+  anos.forEach((a,i)=>{
+    if(i % passo && i !== anos.length-1) return;
+    const t = svgEl("text",{x:px(a), y:y1+18, "text-anchor":"middle",
       fill:"var(--ink3)", "font-size":11, "font-family":"var(--mono)"});
-    t.textContent = x[ANO]; g.appendChild(t);
+    t.textContent = a; g.appendChild(t);
   });
+}
+/* "R$ 1,2 mi" não cabe na margem de um eixo estreito; no gráfico o cifrão é
+   redundante, porque a unidade já está dita na legenda. */
+function brlCurto(v){
+  const a = Math.abs(v), s = v<0 ? "−" : "";
+  if(a >= 1e6) return s+(a/1e6).toFixed(a>=1e7?0:1).replace(".",",")+" mi";
+  if(a >= 1e3) return s+Math.round(a/1e3)+" mil";
+  return s+nf.format(Math.round(a));
 }
 
 function trajetoria(alvo, pts){
-  const L = alvo.clientWidth || 720, A = 300;
-  const mE=76, mD=22, mT=16, mB=34;
+  const L = alvo.clientWidth || 720;
+  const estreito = L < 520;
+  const A = estreito ? 240 : 300;
+  const mE = estreito ? 60 : 76, mD = estreito ? 12 : 22, mT = 16, mB = 34;
   const x0=mE, x1=L-mD, y0=mT, y1=A-mB;
   const anos = pts.map(x=>x[ANO]);
   const aMin = Math.min(...anos), aMax = Math.max(...anos);
@@ -830,12 +913,14 @@ function trajetoria(alvo, pts){
   const s = svgEl("svg",{viewBox:`0 0 ${L} ${A}`, height:A,
                          role:"img","aria-label":"trajetória patrimonial"});
   // grade
-  for(let k=0;k<=4;k++){
-    const v = vMax*k/4, y = py(v);
+  const linhas = estreito ? 3 : 4;
+  for(let k=0;k<=linhas;k++){
+    const v = vMax*k/linhas, y = py(v);
     s.appendChild(svgEl("line",{x1:x0,x2:x1,y1:y,y2:y,stroke:"var(--rule)"}));
     const t = svgEl("text",{x:x0-9,y:y+4,"text-anchor":"end",fill:"var(--ink3)",
       "font-size":11,"font-family":"var(--mono)"});
-    t.textContent = k ? brl(v) : "0"; s.appendChild(t);
+    t.textContent = k ? (estreito ? brlCurto(v) : brl(v)) : "0";
+    s.appendChild(t);
   }
   // régua acumulada
   s.appendChild(svgEl("path",{d:"M"+pts.map((x,i)=>`${px(x[ANO])},${py(regua[i])}`)
@@ -850,7 +935,7 @@ function trajetoria(alvo, pts){
       fill: parcial ? "var(--surface)" : "var(--ink)",
       stroke:"var(--ink)", "stroke-width":2}));
   });
-  eixoAnos(s, pts, px, y1);
+  eixoAnos(s, pts.map(x=>x[ANO]), px, y1, x1-x0);
   alvo.innerHTML = ""; alvo.appendChild(s);
 }
 
@@ -862,30 +947,46 @@ function trajetoria(alvo, pts){
 function composicao(alvo, pts){
   const L = alvo.clientWidth || 720;
   const estreito = L < 520;
-  const mE = estreito ? 42 : 52;            // ano
-  const mD = estreito ? 78 : 104;           // total em reais
-  const linha = 30, gap = 9, mT = 6;
+  /* Numa tela estreita o ano à esquerda e o total à direita comiam metade da
+     largura, e o total ainda vazava para fora do desenho. Ali os dois sobem
+     para uma linha de texto em cima, e a barra fica com a largura toda — que
+     é o que se veio ler. */
+  const mE = estreito ? 0 : 52;             // ano
+  const mD = estreito ? 0 : 104;            // total em reais
+  const rot = estreito ? 17 : 0;            // altura da linha de texto acima
+  const linha = estreito ? 26 : 30, gap = estreito ? 13 : 9, mT = 6;
   const x0 = mE, x1 = L - mD, larg = Math.max(x1-x0, 40);
-  const A = mT + pts.length*(linha+gap);
+  const alt = linha + gap + rot;
+  const A = mT + pts.length*alt;
 
   const s = svgEl("svg",{viewBox:`0 0 ${L} ${A}`, height:A, role:"img",
     "aria-label":"composição do patrimônio declarado, por tipo de bem"});
 
   pts.forEach((x,i)=>{
-    const y = mT + i*(linha+gap);
+    const y = mT + i*alt + rot;
     const comp = x[COMP] || [];
     const soma = comp.reduce((a,b)=>a+b, 0);
 
-    const ano = svgEl("text",{x:x0-10, y:y+linha/2+4, "text-anchor":"end",
-      fill:"var(--ink2)","font-size":12,"font-family":"var(--mono)"});
-    ano.textContent = x[ANO]; s.appendChild(ano);
+    if(estreito){
+      const cab = svgEl("text",{x:x0, y:y-5, fill:"var(--ink2)",
+        "font-size":12,"font-family":"var(--mono)"});
+      cab.textContent = x[ANO] + " · " + (soma ? brl(soma) : "nada declarado")
+        + (x[FLAGS]&F_ANO_PARCIAL ? " · parcial" : "");
+      s.appendChild(cab);
+    } else {
+      const ano = svgEl("text",{x:x0-10, y:y+linha/2+4, "text-anchor":"end",
+        fill:"var(--ink2)","font-size":12,"font-family":"var(--mono)"});
+      ano.textContent = x[ANO]; s.appendChild(ano);
+    }
 
     if(!soma){
       s.appendChild(svgEl("rect",{x:x0, y:y+linha/2-1, width:larg, height:2,
         fill:"var(--rule2)"}));
-      const nada = svgEl("text",{x:x0+larg+10, y:y+linha/2+4,
-        fill:"var(--ink3)","font-size":11.5,"font-family":"var(--mono)"});
-      nada.textContent = "nada declarado"; s.appendChild(nada);
+      if(!estreito){
+        const nada = svgEl("text",{x:x0+larg+10, y:y+linha/2+4,
+          fill:"var(--ink3)","font-size":11.5,"font-family":"var(--mono)"});
+        nada.textContent = "nada declarado"; s.appendChild(nada);
+      }
       return;
     }
 
@@ -910,11 +1011,13 @@ function composicao(alvo, pts){
       }
     });
 
-    const tot = svgEl("text",{x:x0+larg+10, y:y+linha/2+4, fill:"var(--ink2)",
-      "font-size":11.5,"font-family":"var(--mono)"});
-    tot.textContent = brl(soma)
-      + (x[FLAGS]&F_ANO_PARCIAL ? " ·parcial" : "");
-    s.appendChild(tot);
+    if(!estreito){
+      const tot = svgEl("text",{x:x0+larg+10, y:y+linha/2+4, fill:"var(--ink2)",
+        "font-size":11.5,"font-family":"var(--mono)"});
+      tot.textContent = brl(soma)
+        + (x[FLAGS]&F_ANO_PARCIAL ? " ·parcial" : "");
+      s.appendChild(tot);
+    }
   });
   alvo.innerHTML = ""; alvo.appendChild(s);
 }
