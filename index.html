@@ -312,8 +312,15 @@ td:first-child,th:first-child{text-align:left}
   background-attachment:local,local,scroll,scroll}
 .tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;padding:1px 4px;
      border:1px solid currentColor;text-transform:uppercase}
-/* razão social é nome próprio, não número: sai do mono tabular e pode quebrar */
-td.empresa{font-family:var(--sans);white-space:normal;color:var(--ink)}
+/* razão social e descrição de bem são texto, não número: saem do mono tabular
+   e podem quebrar em mais de uma linha */
+td.empresa,td.bem{font-family:var(--sans);white-space:normal;color:var(--ink)}
+/* o quadradinho de categoria amarra a linha à faixa da barra de composição */
+td.bem .swatch{display:inline-block;margin-right:7px;vertical-align:baseline}
+.semdesc{color:var(--ink3);font-style:italic}
+/* mesmo controle do recorte, mas com uma coluna por declaração em vez de três */
+.tri-ops.anos{grid-template-columns:none;grid-auto-flow:column;
+              grid-auto-columns:1fr;margin-bottom:12px}
 tfoot td{color:var(--ink2);border-bottom:none;border-top:1px solid var(--rule2)}
 .rodape{font-size:11.5px;color:var(--ink3);margin:9px 0 0;line-height:1.45;
         max-width:70ch}
@@ -453,6 +460,13 @@ tfoot td{color:var(--ink2);border-bottom:none;border-top:1px solid var(--rule2)}
   .cartoes td:first-child{border-bottom:1px solid var(--rule);padding-bottom:7px;
                           margin-bottom:5px;font-size:14px;color:var(--ink)}
   .cartoes td:first-child::before{content:none}
+  /* o cabeçalho do cartão é uma linha de texto, não um par rótulo-valor: sem
+     isto o space-between joga a descrição do bem para a direita e a deixa a
+     meia tela de distância do quadradinho que a classifica */
+  .cartoes td.bem{justify-content:flex-start;text-align:left}
+  /* tfoot não entra na regra de cima porque as outras tabelas em cartão não
+     têm rodapé; sem ele aqui, o total encolhe numa caixinha solta no canto */
+  .cartoes tfoot,.cartoes tfoot tr,.cartoes tfoot td{display:block;width:100%}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>

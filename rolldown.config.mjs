@@ -17,12 +17,17 @@ const DETALHE = "dossies.json";
 const LEMP = 6; // empresas_lista, na pessoa
 const PTS = 5; // pontos, na pessoa
 const COMP = 6; // composição por categoria, na declaração
+const BENS = 7; // bens item a item, na declaração
 
 /**
  * Separa o dados.json em dois: o que o panorama precisa e o que só o dossiê
- * usa. `comp` e `empresas_lista` são 58% do arquivo e nenhum dos dois é lido
- * fora do dossiê, que abre uma pessoa por vez — 130 KB de gzip no primeiro
- * paint viram 48 KB, e a soma dos dois arquivos ainda dá menos que o original.
+ * usa. `comp`, `empresas_lista` e `bens` são a quase totalidade do arquivo e
+ * nenhum dos três é lido fora do dossiê, que abre uma pessoa por vez — 130 KB
+ * de gzip no primeiro paint viram 48 KB.
+ *
+ * `bens` sozinho é 2,5 MB dos 2,8 MB do dados.json: são os 43.205 itens com a
+ * descrição que cada pessoa escreveu. Fora daqui, o painel inteiro pesaria
+ * vinte vezes mais para quem só quer ver o panorama.
  *
  * O detalhe é indexado pela posição da pessoa no array. A posição é estável
  * entre os dois arquivos porque saem os dois daqui, mas NÃO é estável entre
@@ -36,9 +41,13 @@ function separa(dados, versao) {
   const pessoas = {};
 
   d.pessoas.forEach((p, i) => {
-    pessoas[i] = { e: p[LEMP], c: p[PTS].map((pt) => pt[COMP]) };
+    pessoas[i] = {
+      e: p[LEMP],
+      c: p[PTS].map((pt) => pt[COMP]),
+      b: p[PTS].map((pt) => pt[BENS]),
+    };
     p[LEMP] = [];
-    for (const pt of p[PTS]) pt[COMP] = 0;
+    for (const pt of p[PTS]) pt[COMP] = pt[BENS] = 0;
   });
   d.meta.dossies = DETALHE;
   d.meta.versao = versao;

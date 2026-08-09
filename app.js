@@ -8,7 +8,7 @@
 }).then(function(D){
 const M = D.meta, PESSOAS = D.pessoas;
 const [NOME,UF,ESP,EMP,CAP,PTS,LEMP] = [0,1,2,3,4,5,6];
-const [ANO,PART,CARGO,TOTAL,REGUA,FLAGS,COMP] = [0,1,2,3,4,5,6];
+const [ANO,PART,CARGO,TOTAL,REGUA,FLAGS,COMP,BENS] = [0,1,2,3,4,5,6,7];
 const F_ELEITO=1, F_REGUA_PARCIAL=2, F_ANO_PARCIAL=4;
 const CAT_ROTULO = {imovel:"imóveis",veiculo:"veículos",dinheiro:"dinheiro",
   aplicacao:"aplicações",societaria:"participações societárias",
@@ -95,6 +95,12 @@ function corMult(v){
   if(v === null) return "var(--ink3)";
   return v > 1 ? "var(--acima)" : "var(--abaixo)";
 }
+/* Descrição de bem e razão social são texto que alguém digitou num formulário:
+   dezoito descrições trazem "&" ou ">", e nada garante que amanhã não venha um
+   "<". Como a ficha inteira é montada com innerHTML, escapar aqui é o que
+   separa "F&L COMUNICAÇÃO" de uma entidade quebrada — ou de coisa pior. */
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
 
 /* ── estado ─────────────────────────────────────────────────────────────── */
 /* Os dois recortes têm três posições: "" (ambos), "sim" e "nao". O teste de
@@ -782,9 +788,10 @@ function panorama(res){
 
 /* ── dossiê ─────────────────────────────────────────────────────────────── */
 /* ── o detalhe do dossiê vem à parte ────────────────────────────────────── */
-/* A composição de cada declaração (`comp`) e a lista de empresas aparecem só
-   aqui, uma pessoa por vez, mas juntas eram 58% do dados.json: todo mundo
-   baixava as duas para ver o panorama, que não usa nenhuma delas. O build as
+/* A composição de cada declaração (`comp`), a lista de empresas e os bens item
+   a item aparecem só aqui, uma pessoa por vez, mas juntos são quase todo o
+   dados.json — os bens sozinhos, 2,5 MB dos 2,8 MB: todo mundo baixava tudo
+   para ver o panorama, que não usa nada disso. O build as
    separa num segundo arquivo e diz o nome dele em `meta.dossies`. Elas entram
    na primeira vez que fazem falta — e, antes disso, num prefetch ocioso, para
    que o clique não espere por rede. Servido sem build, `meta.dossies` não
@@ -819,7 +826,10 @@ function carregaDetalhe(){
           const d = det.p[p.i];
           if(!d) return;
           p[LEMP] = d.e;
-          p[PTS].forEach((pt,j)=> pt[COMP] = d.c[j] || 0);
+          p[PTS].forEach((pt,j)=>{
+            pt[COMP] = d.c[j] || 0;
+            pt[BENS] = (d.b && d.b[j]) || 0;
+          });
         });
         detalhePronto = true;
       })
@@ -897,12 +907,13 @@ function dossie(){
         `<span><i class="swatch" style="background:${CAT_COR[i]}"></i>${CAT_ROTULO[c]}</span>`
       ).join("")}</div>
     </div>
+    ${quadroBens(pts)}
     ${(p[LEMP]||[]).length ? `<div class="quadro rolagem">
       <table><thead><tr>
         <th>empresa em que consta no quadro societário</th>
         <th>capital social</th>
       </tr></thead><tbody>${p[LEMP].map(e=>`<tr>
-        <td class="empresa">${e[0]}</td><td>${e[1]?brl(e[1]):"—"}</td>
+        <td class="empresa">${esc(e[0])}</td><td>${e[1]?brl(e[1]):"—"}</td>
       </tr>`).join("")}</tbody>
       <tfoot><tr><td>${p[LEMP].length} empresa${p[LEMP].length>1?"s":""}</td>
         <td>${brl(p[CAP])}</td></tr></tfoot></table>
@@ -944,10 +955,84 @@ function dossie(){
   };
   trajetoria(el("trajetoria"), pts);
   composicao(el("composicao"), pts);
+  ligaBens(pts);
 }
 function ligaVolta(){
   const b = el("voltaLista");
   if(b) b.onclick = ()=> trocaAba("lista");
+}
+
+/* ── bens item a item ───────────────────────────────────────────────────── */
+/* O que a barra de composição resume, aqui está por extenso: cada linha é um
+   bem como a própria pessoa o descreveu no formulário do TSE.
+
+   Uma declaração por vez, e não todas de uma vez, porque somadas elas passam
+   de qualquer limite razoável de rolagem — são 522 linhas na pessoa com mais
+   bens. Sozinha, a declaração mediana tem onze itens. O seletor de ano em cima
+   é o mesmo controle dos recortes, com uma coluna por declaração.
+
+   O ano escolhido não vai para o endereço, ao contrário do resto do estado do
+   painel: quem compartilha uma ficha quer a pessoa, não a aba interna dela. */
+function comBens(pts){
+  return pts.map((x,i)=> [i,x]).filter(([,x])=> (x[BENS]||[]).length);
+}
+function quadroBens(pts){
+  const anos = comBens(pts);
+  if(!anos.length) return "";
+  return `<div class="quadro" id="quadroBens">
+    <div class="tri-ops anos" role="radiogroup" aria-label="declaração">${
+      anos.map(([i,x])=>`<button type="button" role="radio" data-i="${i}"
+        aria-checked="false" tabindex="-1">${x[ANO]}</button>`).join("")}</div>
+    <div class="rolagem cartoes" id="listaBens"></div>
+    <p class="rodape">Cada bem como a pessoa o descreveu, palavra por palavra.
+    O valor é o de aquisição e não é corrigido: imóvel comprado em 1990 está
+    aqui a preço de 1990. A cor amarra cada linha à faixa correspondente da
+    barra acima.</p>
+  </div>`;
+}
+function pintaBens(pts, i){
+  const alvo = el("listaBens");
+  if(!alvo) return;
+  const itens = pts[i][BENS] || [];
+  const soma = itens.reduce((s,b)=> s + b[1], 0);
+  alvo.innerHTML = `<table><thead><tr>
+      <th>bem declarado em ${pts[i][ANO]}</th><th>valor</th>
+    </tr></thead><tbody>${itens.map(b=>`<tr>
+      <td class="bem"><i class="swatch" style="background:${CAT_COR[b[2]]}"
+        title="${esc(CAT_ROTULO[M.categorias[b[2]]])}"></i>${
+        esc(b[0]) || "<span class=\"semdesc\">sem descrição</span>"}</td>
+      <td data-rot="valor">${b[1] ? brl(b[1]) : "—"}</td>
+    </tr>`).join("")}</tbody>
+    <tfoot><tr><td>${itens.length} ${itens.length>1?"bens":"bem"}</td>
+      <td>${brl(soma)}</td></tr></tfoot></table>`;
+  el("quadroBens").querySelectorAll("[data-i]").forEach(b=>{
+    const meu = +b.dataset.i === i;
+    b.setAttribute("aria-checked", String(meu));
+    b.tabIndex = meu ? 0 : -1;
+  });
+}
+function ligaBens(pts){
+  const q = el("quadroBens");
+  if(!q) return;
+  const anos = comBens(pts);
+  // abre na última declaração que tem bem: é a que responde "o que ele tem
+  // hoje", que é o que a pessoa veio perguntar
+  pintaBens(pts, anos[anos.length-1][0]);
+  q.onclick = ev=>{
+    const b = ev.target.closest("[data-i]");
+    if(b) pintaBens(pts, +b.dataset.i);
+  };
+  // seta anda entre os anos, como manda um radiogroup
+  q.onkeydown = ev=>{
+    const passo = ev.key === "ArrowRight" || ev.key === "ArrowDown" ? 1
+                : ev.key === "ArrowLeft" || ev.key === "ArrowUp" ? -1 : 0;
+    if(!passo) return;
+    const b = ev.target.closest("[data-i]"); if(!b) return;
+    ev.preventDefault();
+    const irmaos = [...b.parentElement.children];
+    const alvo = irmaos[(irmaos.indexOf(b) + passo + irmaos.length) % irmaos.length];
+    alvo.focus(); alvo.click();
+  };
 }
 
 const SVG = "http://www.w3.org/2000/svg";
