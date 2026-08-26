@@ -113,9 +113,16 @@ header p{margin:0;color:var(--ink2);font-size:12.5px;max-width:none;white-space:
          overflow:hidden;text-overflow:ellipsis}
 .selo{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
       text-transform:uppercase;color:var(--ink3)}
+/* O ícone mostra o tema atual (lua em modo escuro, sol em modo claro), não a
+   ação — evita a ambiguidade de "sol" enquanto lê como comando e como estado. */
 .tema{background:none;border:1px solid var(--rule2);color:var(--ink2);
-      font-family:var(--mono);font-size:11px;padding:5px 9px;cursor:pointer}
+      padding:6px;line-height:0;cursor:pointer}
 .tema:hover{border-color:var(--accent);color:var(--accent)}
+.tema svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;
+          stroke-linecap:round;stroke-linejoin:round}
+.tema .icone-lua{display:none}
+:root[data-theme="dark"] .tema .icone-sol{display:none}
+:root[data-theme="dark"] .tema .icone-lua{display:block}
 
 /* ─── estrutura ─────────────────────────────────────────────────────────── */
 /* dvh e não vh: no celular a barra de endereço entra e sai da conta do vh, e
@@ -420,7 +427,8 @@ tfoot td{color:var(--ink2);border-bottom:none;border-top:1px solid var(--rule2)}
   /* alvos de toque de 44px para cima — antes iam de 17px (voltar) a 32px */
   .voltar-painel{display:flex;align-items:center;min-height:44px;
                  padding:6px 14px 0;font-size:12.5px}
-  .tema{min-height:42px;padding:10px 13px;font-size:12px}
+  .tema{min-height:42px;min-width:42px;padding:10px;display:inline-flex;
+        align-items:center;justify-content:center}
   .bt{min-height:42px;padding:10px 13px;display:inline-flex;align-items:center;
       justify-content:center}
   .chip{padding:9px 13px;font-size:12.5px;display:inline-flex;align-items:center;
@@ -487,7 +495,11 @@ tfoot td{color:var(--ink2);border-bottom:none;border-top:1px solid var(--rule2)}
     <h1>O que o mandato pagou</h1>
     <p>Patrimônio declarado por quem foi eleito deputado federal, contra o subsídio do cargo.</p>
   </div>
-  <button class="tema" id="btnTema" type="button">tema</button>
+  <button class="tema" id="btnTema" type="button" aria-label="alternar tema">
+    <svg class="icone-sol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/>
+      <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.1 5.1l2.1 2.1M16.8 16.8l2.1 2.1M5.1 18.9l2.1-2.1M16.8 7.2l2.1-2.1"/></svg>
+    <svg class="icone-lua" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5Z"/></svg>
+  </button>
 </header>
 
 <div class="tela">
