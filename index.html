@@ -282,8 +282,13 @@ svg{display:block;width:100%;overflow:visible}
 @media (prefers-reduced-motion:reduce){.carregando::before{animation:none}}
 
 /* ─── dossiê ────────────────────────────────────────────────────────────── */
-.ficha{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;
-       border-bottom:1px solid var(--rule2);padding-bottom:12px;margin-bottom:16px}
+.topoDossie{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;
+            border-bottom:1px solid var(--rule2);padding-bottom:12px;margin-bottom:16px}
+/* Foto oficial da Câmara dos Deputados, carregada por hotlink — não é cópia
+   local. Some sozinha (onerror, no app.js) quando falta ou o link quebra. */
+.retrato{width:88px;height:88px;object-fit:cover;border-radius:8px;flex:none;
+         background:var(--rule2)}
+.ficha{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;flex:1;min-width:200px}
 /* Enquanto o site.css do rodado entrava aqui, este h2 herdava dele o estilo de
    título de reportagem — padding-top:.4rem e um filete de 1px acima do nome.
    Era vazamento, não desenho, e não foi reposto. Se fizer falta, é uma linha. */

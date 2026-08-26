@@ -7,7 +7,7 @@
   return r.json();
 }).then(function(D){
 const M = D.meta, PESSOAS = D.pessoas;
-const [NOME,UF,ESP,EMP,CAP,PTS,LEMP] = [0,1,2,3,4,5,6];
+const [NOME,UF,ESP,EMP,CAP,PTS,LEMP,FOTO] = [0,1,2,3,4,5,6,7];
 const [ANO,PART,CARGO,TOTAL,REGUA,FLAGS,COMP,BENS] = [0,1,2,3,4,5,6,7];
 const F_ELEITO=1, F_REGUA_PARCIAL=2, F_ANO_PARCIAL=4;
 const CAT_ROTULO = {imovel:"imóveis",veiculo:"veículos",dinheiro:"dinheiro",
@@ -884,17 +884,21 @@ function dossie(){
   }
   const pts = p[PTS];
   alvo.innerHTML = volta + `
-    <div class="ficha">
-      <h2>${p[NOME]}</h2>
-      <span class="dado">${p[UF]>=0?M.ufs[p[UF]]:"—"} · <b>${p.partidoAtual||"—"}</b>${
-        p[ESP]>=0?" · "+M.espectros[p[ESP]]:" · sem classificação"}</span>
-      <span class="dado">declara <b>${brl(p.patrimonio)}</b></span>
-      <span class="dado">variação <b style="color:${corMult(p.multiplo)}">${
-        brl(p.crescimento)}</b>${p.multiplo!==null?` · ${mult(p.multiplo)} o subsídio`:""}</span>
-      <span class="dado">${p.mandatos} mandato${p.mandatos===1?"":"s"}</span>
-      ${p[EMP]?`<span class="dado">sócio de <b>${p[EMP]}</b> empresa${
-        p[EMP]>1?"s":""} · capital ${brl(p[CAP])}</span>`:""}
-      <button class="bt" id="copiaLink" type="button">copiar link desta ficha</button>
+    <div class="topoDossie">
+      ${p[FOTO] ? `<img class="retrato" src="${esc(p[FOTO])}" alt=""
+        loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}
+      <div class="ficha">
+        <h2>${p[NOME]}</h2>
+        <span class="dado">${p[UF]>=0?M.ufs[p[UF]]:"—"} · <b>${p.partidoAtual||"—"}</b>${
+          p[ESP]>=0?" · "+M.espectros[p[ESP]]:" · sem classificação"}</span>
+        <span class="dado">declara <b>${brl(p.patrimonio)}</b></span>
+        <span class="dado">variação <b style="color:${corMult(p.multiplo)}">${
+          brl(p.crescimento)}</b>${p.multiplo!==null?` · ${mult(p.multiplo)} o subsídio`:""}</span>
+        <span class="dado">${p.mandatos} mandato${p.mandatos===1?"":"s"}</span>
+        ${p[EMP]?`<span class="dado">sócio de <b>${p[EMP]}</b> empresa${
+          p[EMP]>1?"s":""} · capital ${brl(p[CAP])}</span>`:""}
+        <button class="bt" id="copiaLink" type="button">copiar link desta ficha</button>
+      </div>
     </div>
     <div class="quadro"><div id="trajetoria"></div>
       <div class="legenda">

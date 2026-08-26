@@ -73,6 +73,12 @@ como provisórios.
 **Ausência não é zero.** Pessoa sem declaração num ano pode simplesmente não ter
 concorrido àquela eleição.
 
+**A foto é carregada da Câmara, não copiada.** Vem por hotlink direto de
+camara.leg.br, casada por CPF contra os dados abertos da Câmara dos
+Deputados — a imagem em si nunca é baixada nem hospedada aqui. Cobertura é
+parcial: só aparece quem tem CPF cadastrado naquele dataset da Câmara, então
+a ausência de foto não diz nada sobre o mandato.
+
 ## De onde vem o dado
 
 | fonte | o quê |
@@ -81,6 +87,7 @@ concorrido àquela eleição.
 | TSE, `candidatos` e `resultados_candidato_municipio` | CPF, nome, UF, partido, cargo e quem se elegeu |
 | TSE, dados abertos do ciclo de 2026 | as candidaturas de 2026, ainda em protocolo |
 | Receita Federal, CNPJ | quadro societário e capital social |
+| Câmara dos Deputados, dados abertos | URL da foto oficial, casada por CPF |
 | Decretos legislativos | a tabela de vigências do subsídio parlamentar |
 
 O `dados.json` é gerado por
