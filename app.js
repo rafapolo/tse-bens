@@ -886,7 +886,8 @@ function dossie(){
   alvo.innerHTML = volta + `
     <div class="topoDossie">
       ${p[FOTO] ? `<img class="retrato" src="${esc(p[FOTO])}" alt=""
-        loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}
+        loading="lazy" decoding="async" referrerpolicy="no-referrer"
+        onload="this.classList.add('carregou')" onerror="this.remove()">` : ""}
       <div class="ficha">
         <h2>${p[NOME]}</h2>
         <span class="dado">${p[UF]>=0?M.ufs[p[UF]]:"—"} · <b>${p.partidoAtual||"—"}</b>${

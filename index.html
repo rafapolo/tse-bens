@@ -286,8 +286,11 @@ svg{display:block;width:100%;overflow:visible}
             border-bottom:1px solid var(--rule2);padding-bottom:12px;margin-bottom:16px}
 /* Foto oficial da Câmara dos Deputados, carregada por hotlink — não é cópia
    local. Some sozinha (onerror, no app.js) quando falta ou o link quebra. */
-.retrato{width:88px;height:88px;object-fit:cover;border-radius:8px;flex:none;
-         background:var(--rule2)}
+.retrato{width:88px;height:110px;object-fit:cover;object-position:top center;
+         border-radius:8px;flex:none;border:1px solid var(--rule2);
+         background:var(--rule2);opacity:0;transition:opacity .25s}
+.retrato.carregou{opacity:1}
+@media (prefers-reduced-motion:reduce){.retrato{transition:none}}
 .ficha{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;flex:1;min-width:200px}
 /* Enquanto o site.css do rodado entrava aqui, este h2 herdava dele o estilo de
    título de reportagem — padding-top:.4rem e um filete de 1px acima do nome.
